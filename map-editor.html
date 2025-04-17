@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGV 관리 시스템 - 맵 에디터 및 라우팅</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/common.css">
+  <link rel="stylesheet" href="assets/css/map-editor.css">
+</head>
+<body>
+  <!-- 사이드바 -->
+  <div class="sidebar">
+    <div class="logo">
+      <img src="assets/img/logo.svg" alt="로고">
+      <span>AGV 관리 시스템</span>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="sidebar-menu-item" data-page="index.html">
+        <i class="fas fa-tachometer-alt"></i>
+        <span>대시보드</span>
+      </li>
+      <li class="sidebar-menu-item" data-page="map-editor.html">
+        <i class="fas fa-map-marked-alt"></i>
+        <span>맵 에디터 및 라우팅</span>
+      </li>
+      <li class="sidebar-menu-item" data-page="task-scheduling.html">
+        <i class="fas fa-tasks"></i>
+        <span>작업 할당/스케줄링</span>
+      </li>
+      <li class="sidebar-menu-item" data-page="simulation-control.html">
+        <i class="fas fa-play-circle"></i>
+        <span>시뮬레이션 실행/제어</span>
+      </li>
+      <li class="sidebar-menu-item" data-page="visualization.html">
+        <i class="fas fa-chart-line"></i>
+        <span>3D 시뮬레이션 및 통계</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- 모바일 메뉴 토글 -->
+  <div class="mobile-toggle">
+    <i class="fas fa-bars"></i>
+  </div>
+
+  <!-- 메인 컨텐츠 -->
+  <div class="main-content">
+    <div class="header">
+      <h1>맵 에디터 및 라우팅</h1>
+      <div class="header-actions">
+        <button class="btn btn-secondary" id="simulateRouteButton">
+          <i class="fas fa-route"></i> 경로 시뮬레이션
+        </button>
+        <button class="btn btn-primary" id="saveMapButton">
+          <i class="fas fa-save"></i> 맵 저장
+        </button>
+      </div>
+    </div>
+
+    <div class="map-editor-container">
+      <!-- 좌측 도구 패널 -->
+      <div class="tool-panel">
+        <div class="panel-section">
+          <h3 class="panel-title">맵 도구</h3>
+          <div class="tool-buttons">
+            <button class="tool-btn active" data-tool="select">
+              <i class="fas fa-mouse-pointer"></i>
+              <span>선택</span>
+            </button>
+            <button class="tool-btn" data-tool="obstacle">
+              <i class="fas fa-ban"></i>
+              <span>장애물</span>
+            </button>
+            <button class="tool-btn" data-tool="charging">
+              <i class="fas fa-battery-half"></i>
+              <span>충전소</span>
+            </button>
+            <button class="tool-btn" data-tool="workstation">
+              <i class="fas fa-briefcase"></i>
+              <span>작업장</span>
+            </button>
+            <button class="tool-btn" data-tool="erase">
+              <i class="fas fa-eraser"></i>
+              <span>지우기</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <h3 class="panel-title">라우팅 설정</h3>
+          <div class="form-group">
+            <label for="startPoint" class="form-label">출발점</label>
+            <div class="point-input">
+              <input type="text" id="startPointX" class="form-control coord-input" placeholder="X">
+              <input type="text" id="startPointY" class="form-control coord-input" placeholder="Y">
+              <button class="btn btn-sm btn-secondary" id="selectStartButton">
+                <i class="fas fa-map-marker-alt"></i>
+              </button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="endPoint" class="form-label">도착점</label>
+            <div class="point-input">
+              <input type="text" id="endPointX" class="form-control coord-input" placeholder="X">
+              <input type="text" id="endPointY" class="form-control coord-input" placeholder="Y">
+              <button class="btn btn-sm btn-secondary" id="selectEndButton">
+                <i class="fas fa-flag-checkered"></i>
+              </button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="algorithmSelect" class="form-label">알고리즘</label>
+            <select id="algorithmSelect" class="form-control">
+              <option value="dijkstra" selected>Dijkstra</option>
+              <option value="astar">A* (A-Star)</option>
+              <option value="bfs">BFS (너비 우선 탐색)</option>
+            </select>
+          </div>
+          <button class="btn btn-primary w-100" id="calculateRouteButton">
+            <i class="fas fa-calculator"></i> 경로 계산
+          </button>
+        </div>
+
+        <div class="panel-section">
+          <h3 class="panel-title">맵 관리</h3>
+          <div class="form-group">
+            <label for="mapSizeX" class="form-label">맵 크기</label>
+            <div class="d-flex">
+              <input type="number" id="mapSizeX" class="form-control" value="20" min="5" max="50">
+              <span class="mx-2">×</span>
+              <input type="number" id="mapSizeY" class="form-control" value="20" min="5" max="50">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="mapSelect" class="form-label">맵 불러오기</label>
+            <select id="mapSelect" class="form-control">
+              <option value="">-- 맵 선택 --</option>
+              <option value="default">기본 맵</option>
+              <option value="warehouse">창고 레이아웃</option>
+              <option value="factory">공장 레이아웃</option>
+            </select>
+          </div>
+          <div class="button-group">
+            <button class="btn btn-secondary" id="clearMapButton">
+              <i class="fas fa-trash-alt"></i> 초기화
+            </button>
+            <button class="btn btn-secondary" id="exportMapButton">
+              <i class="fas fa-file-export"></i> 내보내기
+            </button>
+            <button class="btn btn-secondary" id="importMapButton">
+              <i class="fas fa-file-import"></i> 가져오기
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 중앙 맵 영역 -->
+      <div class="map-container">
+        <div class="map-controls">
+          <div class="zoom-controls">
+            <button class="btn btn-sm btn-secondary" id="zoomInButton">
+              <i class="fas fa-search-plus"></i>
+            </button>
+            <button class="btn btn-sm btn-secondary" id="zoomOutButton">
+              <i class="fas fa-search-minus"></i>
+            </button>
+            <button class="btn btn-sm btn-secondary" id="resetViewButton">
+              <i class="fas fa-expand"></i>
+            </button>
+          </div>
+          <div class="map-info">
+            <span id="cursorPosition">X: 0, Y: 0</span>
+            <span id="gridSize">그리드: 20 × 20</span>
+          </div>
+        </div>
+        <div class="map-wrapper">
+          <div class="map-grid" id="mapGrid">
+            <!-- 맵 그리드가 여기에 동적으로 생성됩니다 -->
+          </div>
+        </div>
+        <div class="map-legend">
+          <div class="legend-item">
+            <div class="legend-color empty"></div>
+            <span>빈 공간</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color obstacle"></div>
+            <span>장애물</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color charging"></div>
+            <span>충전소</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color workstation"></div>
+            <span>작업장</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color start"></div>
+            <span>출발점</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color end"></div>
+            <span>도착점</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color path"></div>
+            <span>경로</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 우측 정보 패널 -->
+      <div class="info-panel">
+        <div class="panel-section">
+          <h3 class="panel-title">경로 정보</h3>
+          <div class="route-info" id="routeInfo">
+            <div class="text-center p-3">
+              <p>경로가 계산되지 않았습니다.</p>
+              <p>출발점과 도착점을 선택한 후 경로를 계산하세요.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <h3 class="panel-title">시뮬레이션 매개변수</h3>
+          <div class="form-group">
+            <label for="agvSpeed" class="form-label">AGV 속도 (단위/초)</label>
+            <input type="range" id="agvSpeed" class="form-control" min="1" max="10" value="5">
+            <div class="range-value">
+              <span id="agvSpeedValue">5</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="batteryConsumption" class="form-label">배터리 소모율 (%/단위)</label>
+            <input type="range" id="batteryConsumption" class="form-control" min="0.1" max="5" step="0.1" value="1">
+            <div class="range-value">
+              <span id="batteryConsumptionValue">1.0</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="chargingRate" class="form-label">충전 속도 (%/초)</label>
+            <input type="range" id="chargingRate" class="form-control" min="1" max="20" step="1" value="5">
+            <div class="range-value">
+              <span id="chargingRateValue">5.0</span>
+            </div>
+          </div>
+          <button class="btn btn-primary w-100 mt-3" id="startSimulationButton" disabled>
+            <i class="fas fa-play"></i> 시뮬레이션 시작
+          </button>
+        </div>
+
+        <div class="panel-section">
+          <h3 class="panel-title">알고리즘 설명</h3>
+          <div class="algorithm-info" id="algorithmInfo">
+            <h4>Dijkstra 알고리즘</h4>
+            <p>모든 노드 간의 최단 경로를 찾는 알고리즘으로, 가중치가 있는 그래프에서 특히 유용합니다.</p>
+            <ul>
+              <li>가능한 모든 경로를 탐색</li>
+              <li>최단 거리를 보장</li>
+              <li>계산 비용이 높을 수 있음</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 맵 내보내기 모달 -->
+  <div class="modal" id="exportModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">맵 내보내기</h3>
+        <span class="modal-close">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="exportName" class="form-label">맵 이름</label>
+          <input type="text" id="exportName" class="form-control" placeholder="이름을 입력하세요">
+        </div>
+        <div class="form-group">
+          <label for="exportFormat" class="form-label">파일 형식</label>
+          <select id="exportFormat" class="form-control">
+            <option value="json">JSON</option>
+            <option value="csv">CSV</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">맵 데이터</label>
+          <textarea id="exportData" class="form-control" rows="10" readonly></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="copyDataButton">
+          <i class="fas fa-copy"></i> 복사
+        </button>
+        <button class="btn btn-primary" id="downloadMapButton">
+          <i class="fas fa-download"></i> 다운로드
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 맵 가져오기 모달 -->
+  <div class="modal" id="importModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">맵 가져오기</h3>
+        <span class="modal-close">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="importFormat" class="form-label">파일 형식</label>
+          <select id="importFormat" class="form-control">
+            <option value="json">JSON</option>
+            <option value="csv">CSV</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">맵 데이터 붙여넣기</label>
+          <textarea id="importData" class="form-control" rows="10" placeholder="맵 데이터를 이곳에 붙여넣으세요"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">또는 파일 선택</label>
+          <input type="file" id="importFile" class="form-control">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary modal-close">취소</button>
+        <button class="btn btn-primary" id="importDataButton">
+          <i class="fas fa-file-import"></i> 가져오기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/lib/dijkstra.js"></script>
+  <script src="assets/js/common.js"></script>
+  <script src="assets/js/map-editor.js"></script>
+</body>
+</html>

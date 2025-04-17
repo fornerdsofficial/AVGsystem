@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGV 관리 시스템 - 3D 시뮬레이션 및 통계 시각화</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/common.css">
+  <link rel="stylesheet" href="assets/css/visualization.css">
+  <!-- Plotly.js 라이브러리 추가 -->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+  <!-- 사이드바 -->
+  <div class="sidebar">
+    <div class="logo">
+      <img src="assets/img/logo.svg" alt="로고">
+      <span>AGV 관리 시스템</span>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="sidebar-menu-item" data-page="index.html">
+        <i class="fas fa-tachometer-alt"></i>
+        <span>대시보드</span>
+      </li>
+      <li class="sidebar-menu-item" data-page="map-editor.html">
+        <i class="fas fa-map-marked-alt"></i>
+        <span>맵 에디터 및 라우팅</span>
+      </li>
+      <li class="sidebar-menu-item" data-page="task-scheduling.html">
+        <i class="fas fa-tasks"></i>
+        <span>작업 할당/스케줄링</span>
+      </li>
+      <li class="sidebar-menu-item" data-page="simulation-control.html">
+        <i class="fas fa-play-circle"></i>
+        <span>시뮬레이션 실행/제어</span>
+      </li>
+      <li class="sidebar-menu-item" data-page="visualization.html">
+        <i class="fas fa-chart-line"></i>
+        <span>3D 시뮬레이션 및 통계</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- 모바일 메뉴 토글 -->
+  <div class="mobile-toggle">
+    <i class="fas fa-bars"></i>
+  </div>
+
+  <!-- 메인 컨텐츠 -->
+  <div class="main-content">
+    <div class="header">
+      <h1>3D 시뮬레이션 및 통계 시각화</h1>
+      <div class="header-actions">
+        <button class="btn btn-secondary" id="exportDataButton">
+          <i class="fas fa-file-export"></i> 데이터 내보내기
+        </button>
+        <button class="btn btn-primary" id="loadDataButton">
+          <i class="fas fa-file-import"></i> 데이터 불러오기
+        </button>
+      </div>
+    </div>
+
+    <!-- 탭 메뉴 -->
+    <div class="tab-menu">
+      <button class="tab-btn active" data-tab="3d-view">3D 시뮬레이션</button>
+      <button class="tab-btn" data-tab="statistics">통계 분석</button>
+      <button class="tab-btn" data-tab="tracks">이동 궤적</button>
+    </div>
+
+    <!-- 탭 콘텐츠 -->
+    <div class="tab-content">
+      <!-- 3D 시뮬레이션 뷰 탭 -->
+      <div class="tab-pane active" id="3d-view-tab">
+        <div class="visualization-container">
+          <!-- 좌측 컨트롤 패널 -->
+          <div class="control-panel">
+            <div class="panel-section">
+              <h3 class="panel-title">시뮬레이션 컨트롤</h3>
+              <div class="control-buttons">
+                <button class="btn btn-sm btn-success" id="play3dButton">
+                  <i class="fas fa-play"></i> 재생
+                </button>
+                <button class="btn btn-sm btn-secondary" id="pause3dButton" disabled>
+                  <i class="fas fa-pause"></i> 일시정지
+                </button>
+                <button class="btn btn-sm btn-danger" id="reset3dButton">
+                  <i class="fas fa-redo"></i> 초기화
+                </button>
+              </div>
+              
+              <div class="form-group mt-3">
+                <label for="animationSpeed" class="form-label">애니메이션 속도</label>
+                <div class="speed-selector">
+                  <button class="speed-btn" data-speed="0.5">0.5x</button>
+                  <button class="speed-btn active" data-speed="1">1x</button>
+                  <button class="speed-btn" data-speed="2">2x</button>
+                  <button class="speed-btn" data-speed="4">4x</button>
+                </div>
+              </div>
+              
+              <div class="animation-time">
+                <div class="time-label">시간</div>
+                <div class="time-display" id="animationTime">00:00:00</div>
+              </div>
+            </div>
+            
+            <div class="panel-section">
+              <h3 class="panel-title">표시 설정</h3>
+              <div class="display-options">
+                <div class="form-check">
+                  <input type="checkbox" id="showObstacles" class="form-check-input" checked>
+                  <label for="showObstacles" class="form-check-label">장애물 표시</label>
+                </div>
+                <div class="form-check">
+                  <input type="checkbox" id="showPaths" class="form-check-input" checked>
+                  <label for="showPaths" class="form-check-label">이동 경로 표시</label>
+                </div>
+                <div class="form-check">
+                  <input type="checkbox" id="showLabels" class="form-check-input" checked>
+                  <label for="showLabels" class="form-check-label">레이블 표시</label>
+                </div>
+                <div class="form-check">
+                  <input type="checkbox" id="showSurface" class="form-check-input" checked>
+                  <label for="showSurface" class="form-check-label">지형 표면 표시</label>
+                </div>
+              </div>
+              
+              <div class="form-group mt-3">
+                <label for="viewMode" class="form-label">보기 모드</label>
+                <select id="viewMode" class="form-control">
+                  <option value="3d">3D 보기</option>
+                  <option value="top">상단 보기</option>
+                  <option value="side">측면 보기</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="panel-section">
+              <h3 class="panel-title">하이라이트</h3>
+              <div class="form-group">
+                <label for="highlightAgv" class="form-label">AGV 선택</label>
+                <select id="highlightAgv" class="form-control">
+                  <option value="">-- 선택 --</option>
+                  <option value="AGV-001">AGV-001</option>
+                  <option value="AGV-002">AGV-002</option>
+                  <option value="AGV-003">AGV-003</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="highlightTask" class="form-label">작업 선택</label>
+                <select id="highlightTask" class="form-control">
+                  <option value="">-- 선택 --</option>
+                  <option value="TASK-001">TASK-001</option>
+                  <option value="TASK-002">TASK-002</option>
+                  <option value="TASK-003">TASK-003</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 3D 시각화 영역 -->
+          <div class="visualization-area">
+            <div id="3d-plot" class="plot-container"></div>
+          </div>
+          
+          <!-- 우측 정보 패널 -->
+          <div class="info-panel">
+            <div class="panel-section">
+              <h3 class="panel-title">현재 상태</h3>
+              <div class="status-container" id="currentStatus">
+                <div class="loading">데이터 로드 중...</div>
+              </div>
+            </div>
+            
+            <div class="panel-section">
+              <h3 class="panel-title">AGV 정보</h3>
+              <div class="agv-info-container" id="agvInfo">
+                <div class="info-message">AGV를 선택하여 정보를 확인하세요.</div>
+              </div>
+            </div>
+            
+            <div class="panel-section">
+              <h3 class="panel-title">작업 정보</h3>
+              <div class="task-info-container" id="taskInfo">
+                <div class="info-message">작업을 선택하여 정보를 확인하세요.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 통계 분석 탭 -->
+      <div class="tab-pane" id="statistics-tab">
+        <div class="row">
+          <!-- 통계 요약 -->
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">시뮬레이션 통계 요약</h2>
+              </div>
+              <div class="card-body">
+                <div class="stats-summary">
+                  <div class="stats-item">
+                    <div class="stats-icon">
+                      <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="stats-content">
+                      <div class="stats-label">총 작업 수</div>
+                      <div class="stats-value" id="totalTaskCount">0</div>
+                    </div>
+                  </div>
+                  <div class="stats-item">
+                    <div class="stats-icon">
+                      <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stats-content">
+                      <div class="stats-label">완료된 작업 수</div>
+                      <div class="stats-value" id="completedTaskCount">0</div>
+                    </div>
+                  </div>
+                  <div class="stats-item">
+                    <div class="stats-icon">
+                      <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="stats-content">
+                      <div class="stats-label">AGV 수</div>
+                      <div class="stats-value" id="totalAgvCount">0</div>
+                    </div>
+                  </div>
+                  <div class="stats-item">
+                    <div class="stats-icon">
+                      <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stats-content">
+                      <div class="stats-label">총 시뮬레이션 시간</div>
+                      <div class="stats-value" id="totalSimTime">00:00:00</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 작업 처리 통계 -->
+          <div class="col-6">
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">작업 처리 통계</h2>
+              </div>
+              <div class="card-body">
+                <div id="task-completion-chart" class="chart-container"></div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- AGV 가동률 -->
+          <div class="col-6">
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">AGV 가동률</h2>
+              </div>
+              <div class="card-body">
+                <div id="agv-utilization-chart" class="chart-container"></div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 작업 대기 시간 분포 -->
+          <div class="col-6">
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">작업 대기 시간 분포</h2>
+              </div>
+              <div class="card-body">
+                <div id="waiting-time-chart" class="chart-container"></div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 배터리 사용 현황 -->
+          <div class="col-6">
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">배터리 사용 현황</h2>
+              </div>
+              <div class="card-body">
+                <div id="battery-usage-chart" class="chart-container"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 이동 궤적 탭 -->
+      <div class="tab-pane" id="tracks-tab">
+        <div class="row">
+          <!-- 이동 궤적 맵 -->
+          <div class="col-8">
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">AGV 이동 궤적</h2>
+                <div class="card-actions">
+                  <select id="trackAgvSelect" class="form-control">
+                    <option value="all">모든 AGV</option>
+                    <option value="AGV-001">AGV-001</option>
+                    <option value="AGV-002">AGV-002</option>
+                    <option value="AGV-003">AGV-003</option>
+                  </select>
+                </div>
+              </div>
+              <div class="card-body">
+                <div id="movement-track-plot" class="plot-container"></div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 이동 거리 및 시간 -->
+          <div class="col-4">
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">이동 거리 및 시간</h2>
+              </div>
+              <div class="card-body">
+                <div id="distance-time-chart" class="chart-container"></div>
+                
+                <div class="data-summary mt-4">
+                  <div class="summary-row">
+                    <div class="summary-label">총 이동 거리:</div>
+                    <div class="summary-value" id="totalDistance">0 units</div>
+                  </div>
+                  <div class="summary-row">
+                    <div class="summary-label">평균 이동 속도:</div>
+                    <div class="summary-value" id="avgSpeed">0 units/s</div>
+                  </div>
+                  <div class="summary-row">
+                    <div class="summary-label">최대 이동 거리 AGV:</div>
+                    <div class="summary-value" id="maxDistanceAgv">-</div>
+                  </div>
+                  <div class="summary-row">
+                    <div class="summary-label">최소 이동 거리 AGV:</div>
+                    <div class="summary-value" id="minDistanceAgv">-</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 이동 효율성 -->
+            <div class="card mt-4">
+              <div class="card-header">
+                <h2 class="card-title">이동 효율성</h2>
+              </div>
+              <div class="card-body">
+                <div id="efficiency-chart" class="chart-container"></div>
+                
+                <div class="efficiency-note mt-3">
+                  <p class="note-text">
+                    <i class="fas fa-info-circle"></i>
+                    효율성은 최적 경로 대비 실제 이동 거리의 비율로 계산됩니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 데이터 불러오기 모달 -->
+  <div class="modal" id="loadDataModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">시뮬레이션 데이터 불러오기</h3>
+        <span class="modal-close">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">데이터 파일 선택</label>
+          <input type="file" id="dataFileInput" class="form-control" accept=".json">
+        </div>
+        <div class="form-group mt-3">
+          <label class="form-label">또는 저장된 시뮬레이션 선택</label>
+          <select id="savedSimulationSelect" class="form-control">
+            <option value="">-- 선택하세요 --</option>
+            <option value="sim1">기본 시나리오 (2023-04-16 10:30)</option>
+            <option value="sim2">고부하 시나리오 (2023-04-16 11:45)</option>
+            <option value="sim3">장애 대응 시나리오 (2023-04-16 14:20)</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary modal-close">취소</button>
+        <button class="btn btn-primary" id="confirmLoadButton">
+          <i class="fas fa-check"></i> 불러오기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/common.js"></script>
+  <script src="assets/js/visualization.js"></script>
+</body>
+</html>

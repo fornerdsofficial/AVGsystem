@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGV 관리 시스템 - 시뮬레이션 실행/제어</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/common.css">
+  <link rel="stylesheet" href="assets/css/simulation-control.css">
+</head>
+<body>
+  <!-- 사이드바 -->
+  <div class="sidebar">
+    <div class="logo">
+      <img src="assets/img/logo.svg" alt="로고">
+      <span>AGV 관리 시스템</span>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="sidebar-menu-item" data-page="index.html">
+        <i class="fas fa-tachometer-alt"></i>
+        <span>대시보드</span>
+      </li>
+      <li class="sidebar-menu-item" data-page="map-editor.html">
+        <i class="fas fa-map-marked-alt"></i>
+        <span>맵 에디터 및 라우팅</span>
+      </li>
+      <li class="sidebar-menu-item" data-page="task-scheduling.html">
+        <i class="fas fa-tasks"></i>
+        <span>작업 할당/스케줄링</span>
+      </li>
+      <li class="sidebar-menu-item" data-page="simulation-control.html">
+        <i class="fas fa-play-circle"></i>
+        <span>시뮬레이션 실행/제어</span>
+      </li>
+      <li class="sidebar-menu-item" data-page="visualization.html">
+        <i class="fas fa-chart-line"></i>
+        <span>3D 시뮬레이션 및 통계</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- 모바일 메뉴 토글 -->
+  <div class="mobile-toggle">
+    <i class="fas fa-bars"></i>
+  </div>
+
+  <!-- 메인 컨텐츠 -->
+  <div class="main-content">
+    <div class="header">
+      <h1>시뮬레이션 실행/제어</h1>
+      <div class="header-actions">
+        <button class="btn btn-primary" id="saveSimulationButton">
+          <i class="fas fa-save"></i> 시뮬레이션 저장
+        </button>
+      </div>
+    </div>
+
+    <div class="simulation-container">
+      <!-- 좌측 시뮬레이션 제어 패널 -->
+      <div class="control-panel">
+        <div class="panel-section">
+          <h3 class="panel-title">시뮬레이션 제어</h3>
+          <div class="control-buttons">
+            <button class="btn btn-lg btn-success" id="startSimulationButton">
+              <i class="fas fa-play"></i> 시작
+            </button>
+            <button class="btn btn-lg btn-secondary" id="pauseSimulationButton" disabled>
+              <i class="fas fa-pause"></i> 일시정지
+            </button>
+            <button class="btn btn-lg btn-danger" id="stopSimulationButton" disabled>
+              <i class="fas fa-stop"></i> 중지
+            </button>
+          </div>
+          
+          <div class="form-group mt-4">
+            <label for="simulationSpeed" class="form-label">시뮬레이션 속도</label>
+            <div class="speed-selector">
+              <button class="speed-btn" data-speed="1">1x</button>
+              <button class="speed-btn active" data-speed="2">2x</button>
+              <button class="speed-btn" data-speed="4">4x</button>
+              <button class="speed-btn" data-speed="8">8x</button>
+            </div>
+          </div>
+          
+          <div class="simulation-time">
+            <div class="time-label">시뮬레이션 시간</div>
+            <div class="time-display" id="simulationTime">00:00:00</div>
+          </div>
+        </div>
+        
+        <div class="panel-section">
+          <h3 class="panel-title">시나리오 설정</h3>
+          <div class="form-group">
+            <label for="scenarioSelect" class="form-label">시나리오 선택</label>
+            <select id="scenarioSelect" class="form-control">
+              <option value="">-- 선택하세요 --</option>
+              <option value="scenario1">기본 시나리오</option>
+              <option value="scenario2">고부하 시나리오</option>
+              <option value="scenario3">장애 대응 시나리오</option>
+              <option value="custom">사용자 정의</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="agvCount" class="form-label">AGV 수</label>
+            <input type="number" id="agvCount" class="form-control" min="1" max="20" value="5">
+          </div>
+          
+          <div class="form-group">
+            <label for="taskCount" class="form-label">작업 수</label>
+            <input type="number" id="taskCount" class="form-control" min="1" max="50" value="10">
+          </div>
+          
+          <div class="form-group">
+            <label for="schedulingAlgorithm" class="form-label">스케줄링 알고리즘</label>
+            <select id="schedulingAlgorithm" class="form-control">
+              <option value="fifo">FIFO (First In, First Out)</option>
+              <option value="priority">우선순위 기반</option>
+              <option value="nearest">최근접 위치 기반</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="failureRate" class="form-label">장애 발생 확률 (%)</label>
+            <input type="range" id="failureRate" class="form-control" min="0" max="20" value="5">
+            <div class="range-value">
+              <span id="failureRateValue">5%</span>
+            </div>
+          </div>
+          
+          <button class="btn btn-primary w-100 mt-3" id="applyScenarioButton">
+            <i class="fas fa-check"></i> 설정 적용
+          </button>
+        </div>
+        
+        <div class="panel-section">
+          <h3 class="panel-title">이벤트 생성</h3>
+          <div class="form-group">
+            <label for="eventType" class="form-label">이벤트 유형</label>
+            <select id="eventType" class="form-control">
+              <option value="obstacle">장애물 발생</option>
+              <option value="battery">배터리 부족</option>
+              <option value="breakdown">AGV 고장</option>
+              <option value="highPriority">긴급 작업</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="eventTarget" class="form-label">대상 AGV</label>
+            <select id="eventTarget" class="form-control">
+              <option value="random">무작위</option>
+              <option value="AGV-001">AGV-001</option>
+              <option value="AGV-002">AGV-002</option>
+              <option value="AGV-003">AGV-003</option>
+            </select>
+          </div>
+          
+          <button class="btn btn-warning w-100" id="createEventButton">
+            <i class="fas fa-bolt"></i> 이벤트 발생
+          </button>
+        </div>
+      </div>
+
+      <!-- 중앙 시뮬레이션 화면 -->
+      <div class="simulation-area">
+        <div class="simulation-header">
+          <div class="map-info">
+            <span>맵: 기본 맵 (20x20)</span>
+          </div>
+          <div class="zoom-controls">
+            <button class="btn btn-sm btn-secondary" id="zoomInButton">
+              <i class="fas fa-search-plus"></i>
+            </button>
+            <button class="btn btn-sm btn-secondary" id="zoomOutButton">
+              <i class="fas fa-search-minus"></i>
+            </button>
+            <button class="btn btn-sm btn-secondary" id="resetViewButton">
+              <i class="fas fa-expand"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div class="simulation-map-container" id="simulationMapContainer">
+          <!-- 시뮬레이션 맵이 여기에 동적으로 생성됩니다 -->
+          <div class="loading-overlay">
+            <div class="spinner"></div>
+            <p>시뮬레이션 준비 중...</p>
+          </div>
+        </div>
+        
+        <div class="simulation-footer">
+          <div class="simulation-status">
+            <span id="simulationStatus">준비 완료</span>
+          </div>
+          <div class="simulation-legend">
+            <div class="legend-item">
+              <div class="legend-color agv"></div>
+              <span>AGV</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color task"></div>
+              <span>작업</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color charging"></div>
+              <span>충전소</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color obstacle"></div>
+              <span>장애물</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 우측 상태 패널 -->
+      <div class="status-panel">
+        <div class="panel-section">
+          <h3 class="panel-title">
+            AGV 상태
+            <span class="badge badge-info" id="agvCountBadge">5</span>
+          </h3>
+          <div class="agv-status-list" id="agvStatusList">
+            <!-- AGV 상태 항목이 여기에 동적으로 추가됩니다 -->
+          </div>
+        </div>
+        
+        <div class="panel-section">
+          <h3 class="panel-title">
+            작업 현황
+            <span class="badge badge-info" id="taskCountBadge">10</span>
+          </h3>
+          <div class="task-summary">
+            <div class="task-stat">
+              <div class="task-stat-label">대기 중</div>
+              <div class="task-stat-value" id="pendingTaskCount">10</div>
+            </div>
+            <div class="task-stat">
+              <div class="task-stat-label">진행 중</div>
+              <div class="task-stat-value" id="inProgressTaskCount">0</div>
+            </div>
+            <div class="task-stat">
+              <div class="task-stat-label">완료</div>
+              <div class="task-stat-value" id="completedTaskCount">0</div>
+            </div>
+          </div>
+          <div class="task-list-container">
+            <div class="task-list-header">
+              <div class="task-list-title">작업 목록</div>
+              <select id="taskListFilter" class="task-list-filter">
+                <option value="all">모두</option>
+                <option value="pending">대기 중</option>
+                <option value="in-progress">진행 중</option>
+                <option value="completed">완료</option>
+              </select>
+            </div>
+            <div class="task-list" id="taskList">
+              <!-- 작업 항목이 여기에 동적으로 추가됩니다 -->
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel-section">
+          <h3 class="panel-title">이벤트 로그</h3>
+          <div class="event-log" id="eventLog">
+            <!-- 이벤트 로그 항목이 여기에 동적으로 추가됩니다 -->
+            <div class="event-log-item">
+              <div class="event-time">00:00:00</div>
+              <div class="event-message">시뮬레이션이 준비되었습니다.</div>
+            </div>
+          </div>
+          <button class="btn btn-sm btn-secondary w-100 mt-2" id="clearLogButton">
+            <i class="fas fa-trash-alt"></i> 로그 지우기
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 시뮬레이션 결과 모달 -->
+  <div class="modal" id="resultModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">시뮬레이션 결과</h3>
+        <span class="modal-close">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="result-summary">
+          <div class="result-item">
+            <div class="result-label">총 실행 시간</div>
+            <div class="result-value" id="totalSimulationTime">00:00:00</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">처리된 작업</div>
+            <div class="result-value" id="totalTasksProcessed">0 / 0</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">평균 대기 시간</div>
+            <div class="result-value" id="avgWaitingTime">0분</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">AGV 가동률</div>
+            <div class="result-value" id="agvUtilization">0%</div>
+          </div>
+        </div>
+        
+        <div class="result-charts">
+          <div class="chart-container" id="taskCompletionChart">
+            <!-- 작업 완료 차트가 여기에 동적으로 추가됩니다 -->
+          </div>
+          <div class="chart-container" id="agvUtilizationChart">
+            <!-- AGV 가동률 차트가 여기에 동적으로 추가됩니다 -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="exportResultButton">
+          <i class="fas fa-file-export"></i> 결과 내보내기
+        </button>
+        <button class="btn btn-primary" id="closeResultButton">
+          <i class="fas fa-check"></i> 확인
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/common.js"></script>
+  <script src="assets/js/simulation-control.js"></script>
+</body>
+</html>

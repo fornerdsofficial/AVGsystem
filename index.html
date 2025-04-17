@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGV 관리 시스템 - 대시보드</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/common.css">
+  <link rel="stylesheet" href="assets/css/dashboard.css">
+</head>
+<body>
+  <!-- 사이드바 -->
+  <div class="sidebar">
+    <div class="logo">
+      <img src="assets/img/logo.svg" alt="로고">
+      <span>AGV 관리 시스템</span>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="sidebar-menu-item" data-page="index.html">
+        <i class="fas fa-tachometer-alt"></i>
+        <span>대시보드</span>
+      </li>
+      <li class="sidebar-menu-item" data-page="map-editor.html">
+        <i class="fas fa-map-marked-alt"></i>
+        <span>맵 에디터 및 라우팅</span>
+      </li>
+      <li class="sidebar-menu-item" data-page="task-scheduling.html">
+        <i class="fas fa-tasks"></i>
+        <span>작업 할당/스케줄링</span>
+      </li>
+      <li class="sidebar-menu-item" data-page="simulation-control.html">
+        <i class="fas fa-play-circle"></i>
+        <span>시뮬레이션 실행/제어</span>
+      </li>
+      <li class="sidebar-menu-item" data-page="visualization.html">
+        <i class="fas fa-chart-line"></i>
+        <span>3D 시뮬레이션 및 통계</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- 모바일 메뉴 토글 -->
+  <div class="mobile-toggle">
+    <i class="fas fa-bars"></i>
+  </div>
+
+  <!-- 메인 컨텐츠 -->
+  <div class="main-content">
+    <div class="header">
+      <h1>대시보드</h1>
+      <div class="header-actions">
+        <button class="btn btn-primary" id="refreshButton">
+          <i class="fas fa-sync-alt"></i> 새로고침
+        </button>
+        <div class="user-menu">
+          <span>관리자</span>
+          <i class="fas fa-user-circle"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- 상단 요약 정보 -->
+    <div class="row summary-row">
+      <div class="col-3">
+        <div class="card summary-card">
+          <div class="summary-icon bg-primary">
+            <i class="fas fa-robot"></i>
+          </div>
+          <div class="summary-content">
+            <h3 class="summary-title">총 AGV 수</h3>
+            <p class="summary-value" id="totalAgvCount">5</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="card summary-card">
+          <div class="summary-icon bg-success">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <div class="summary-content">
+            <h3 class="summary-title">가동 중인 AGV</h3>
+            <p class="summary-value" id="activeAgvCount">2</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="card summary-card">
+          <div class="summary-icon bg-warning">
+            <i class="fas fa-tasks"></i>
+          </div>
+          <div class="summary-content">
+            <h3 class="summary-title">진행 중인 작업</h3>
+            <p class="summary-value" id="activeTaskCount">2</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="card summary-card">
+          <div class="summary-icon bg-danger">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <div class="summary-content">
+            <h3 class="summary-title">오류/경고</h3>
+            <p class="summary-value" id="alertCount">3</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGV 상태 -->
+    <div class="row">
+      <div class="col-8">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">AGV 상태</h2>
+            <div class="card-actions">
+              <button class="btn btn-sm btn-primary" id="viewAllAgvButton">전체 보기</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="agv-status-grid" id="agvStatusGrid">
+              <!-- AGV 상태 카드가 여기에 동적으로 추가됩니다 -->
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">AGV 상태 분석</h2>
+          </div>
+          <div class="card-body">
+            <div class="chart-container">
+              <div id="agvStatusChart"></div>
+            </div>
+            <div class="status-legend">
+              <div class="status-legend-item">
+                <span class="status-dot bg-success"></span>
+                <span>가동 중</span>
+              </div>
+              <div class="status-legend-item">
+                <span class="status-dot bg-warning"></span>
+                <span>충전 중</span>
+              </div>
+              <div class="status-legend-item">
+                <span class="status-dot bg-info"></span>
+                <span>대기 중</span>
+              </div>
+              <div class="status-legend-item">
+                <span class="status-dot bg-danger"></span>
+                <span>점검/오류</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 작업 현황 및 알림 -->
+    <div class="row">
+      <div class="col-6">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">진행 중인 작업</h2>
+            <div class="card-actions">
+              <button class="btn btn-sm btn-primary" id="viewAllTasksButton">전체 보기</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="task-list" id="taskList">
+              <!-- 작업 항목이 여기에 동적으로 추가됩니다 -->
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">시스템 알림 및 이벤트</h2>
+            <div class="card-actions">
+              <button class="btn btn-sm btn-primary" id="viewAllAlertsButton">전체 보기</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="event-list" id="eventList">
+              <!-- 알림 항목이 여기에 동적으로 추가됩니다 -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 빠른 이동 -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">빠른 이동</h2>
+          </div>
+          <div class="card-body">
+            <div class="quick-access">
+              <a href="map-editor.html" class="quick-access-item">
+                <i class="fas fa-map-marked-alt"></i>
+                <span>맵 에디터</span>
+              </a>
+              <a href="task-scheduling.html" class="quick-access-item">
+                <i class="fas fa-tasks"></i>
+                <span>작업 할당</span>
+              </a>
+              <a href="simulation-control.html" class="quick-access-item">
+                <i class="fas fa-play-circle"></i>
+                <span>시뮬레이션</span>
+              </a>
+              <a href="visualization.html" class="quick-access-item">
+                <i class="fas fa-chart-line"></i>
+                <span>통계 분석</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/common.js"></script>
+  <script src="assets/js/dashboard.js"></script>
+</body>
+</html>

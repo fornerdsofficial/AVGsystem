@@ -1,0 +1,629 @@
+/* task-scheduling.css - 작업 할당/스케줄링 페이지 스타일 */
+
+/* 탭 메뉴 */
+.tab-menu {
+    display: flex;
+    background-color: var(--white);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+  
+  .tab-btn {
+    flex: 1;
+    padding: 1rem;
+    border: none;
+    background-color: transparent;
+    color: var(--text-light);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+  }
+  
+  .tab-btn:hover {
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+  }
+  
+  .tab-btn.active {
+    background-color: var(--primary-color);
+    color: var(--white);
+  }
+  
+  /* 탭 콘텐츠 */
+  .tab-pane {
+    display: none;
+  }
+  
+  .tab-pane.active {
+    display: block;
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  /* 검색 및 필터 */
+  .card-actions {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+  }
+  
+  .search-box {
+    position: relative;
+  }
+  
+  .search-box input {
+    padding: 0.5rem 0.8rem;
+    padding-right: 2rem;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    width: 200px;
+  }
+  
+  .search-box i {
+    position: absolute;
+    right: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-light);
+  }
+  
+  .filter-box select {
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+  }
+  
+  /* 테이블 스타일 강화 */
+  .table-responsive {
+    overflow-x: auto;
+    margin-bottom: 1rem;
+  }
+  
+  .table th {
+    white-space: nowrap;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+  
+  .table td {
+    vertical-align: middle;
+    padding: 0.75rem;
+  }
+  
+  .table tbody tr {
+    transition: background-color 0.2s;
+    cursor: pointer;
+  }
+  
+  .table tbody tr:hover {
+    background-color: rgba(77, 141, 110, 0.05);
+  }
+  
+  .table tbody tr.selected {
+    background-color: rgba(77, 141, 110, 0.1);
+    border-left: 3px solid var(--primary-color);
+  }
+  
+  /* 작업 세부 정보 패널 */
+  .task-details {
+    padding: 1rem;
+  }
+  
+  .detail-group {
+    margin-bottom: 1rem;
+  }
+  
+  .detail-label {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-bottom: 0.3rem;
+  }
+  
+  .detail-value {
+    font-weight: 500;
+  }
+  
+  .task-description {
+    background-color: var(--secondary-color);
+    padding: 1rem;
+    border-radius: 5px;
+    margin-top: 1rem;
+    white-space: pre-line;
+  }
+  
+  /* 할당 패널 */
+  .task-assignment-panel {
+    margin-bottom: 1rem;
+  }
+  
+  .assignment-group {
+    margin-bottom: 1rem;
+  }
+  
+  .agv-option {
+    display: flex;
+    align-items: center;
+    padding: 0.6rem;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .agv-option:hover {
+    background-color: var(--secondary-color);
+  }
+  
+  .agv-option.selected {
+    border-color: var(--primary-color);
+    background-color: rgba(77, 141, 110, 0.1);
+  }
+  
+  .agv-option-icon {
+    margin-right: 0.8rem;
+    font-size: 1.2rem;
+    color: var(--text-light);
+  }
+  
+  .agv-option-info {
+    flex: 1;
+  }
+  
+  .agv-option-name {
+    font-weight: 500;
+  }
+  
+  .agv-option-status {
+    font-size: 0.8rem;
+    color: var(--text-light);
+  }
+  
+  .agv-option-battery {
+    width: 50px;
+    text-align: right;
+  }
+  
+  /* AGV 세부 정보 */
+  .agv-details {
+    padding: 1rem;
+  }
+  
+  .agv-detail-group {
+    margin-bottom: 1rem;
+  }
+  
+  .agv-status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+  }
+  
+  .agv-battery-bar {
+    height: 8px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 0.3rem;
+  }
+  
+  .agv-battery-fill {
+    height: 100%;
+    border-radius: 4px;
+  }
+  
+  .agv-battery-high {
+    background-color: var(--success-color);
+  }
+  
+  .agv-battery-medium {
+    background-color: var(--warning-color);
+  }
+  
+  .agv-battery-low {
+    background-color: var(--danger-color);
+  }
+  
+  .agv-task-history {
+    margin-top: 1rem;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  
+  .history-item {
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.9rem;
+  }
+  
+  .history-item:last-child {
+    border-bottom: none;
+  }
+  
+  .history-time {
+    font-size: 0.8rem;
+    color: var(--text-light);
+  }
+  
+  /* AGV 제어 패널 */
+  .agv-control-panel {
+    text-align: center;
+  }
+  
+  .control-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  
+  .control-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 5px;
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+  }
+  
+  .control-btn:hover {
+    background-color: var(--primary-color);
+    color: var(--white);
+  }
+  
+  /* 토글 스위치 */
+  .toggle-switch {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  
+  .toggle-input {
+    display: none;
+  }
+  
+  .toggle-label {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+    background-color: var(--text-light);
+    border-radius: 24px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  .toggle-label::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background-color: var(--white);
+    border-radius: 50%;
+    transition: all 0.3s;
+  }
+  
+  .toggle-input:checked + .toggle-label {
+    background-color: var(--primary-color);
+  }
+  
+  .toggle-input:checked + .toggle-label::after {
+    transform: translateX(26px);
+  }
+  
+  .toggle-text {
+    font-size: 0.9rem;
+    color: var(--text-color);
+  }
+  
+  /* 슬라이더 그룹 */
+  .slider-group {
+    margin-bottom: 1rem;
+  }
+  
+  .slider-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.3rem;
+  }
+  
+  /* 스케줄링 통계 그리드 */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .stats-item {
+    background-color: var(--secondary-color);
+    border-radius: 5px;
+    padding: 1rem;
+    text-align: center;
+  }
+  
+  .stats-label {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-bottom: 0.5rem;
+    white-space: nowrap;
+  }
+  
+  .stats-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+  
+  /* 차트 컨테이너 */
+  .chart-container {
+    height: 200px;
+    background-color: var(--white);
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  
+  /* 페이지네이션 */
+  .pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.3rem;
+    margin-top: 1rem;
+  }
+  
+  .page-item {
+    list-style: none;
+  }
+  
+  .page-link {
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    border-radius: 5px;
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .page-link:hover {
+    background-color: var(--primary-color);
+    color: var(--white);
+  }
+  
+  .page-item.active .page-link {
+    background-color: var(--primary-color);
+    color: var(--white);
+  }
+  
+  .page-item.disabled .page-link {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  
+  /* 액션 버튼 */
+  .action-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin-right: 0.3rem;
+  }
+  
+  /* 알고리즘 설명 */
+  #algorithmDescription {
+    padding: 1rem;
+  }
+  
+  #algorithmDescription h4 {
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+  }
+  
+  #algorithmDescription p {
+    margin-bottom: 1rem;
+    color: var(--text-color);
+  }
+  
+  #algorithmDescription ul {
+    padding-left: 1.2rem;
+    margin-bottom: 0;
+    color: var(--text-color);
+  }
+  
+  /* 우선순위 뱃지 */
+  .priority-badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: white;
+  }
+  
+  .priority-high {
+    background-color: var(--danger-color);
+  }
+  
+  .priority-medium {
+    background-color: var(--warning-color);
+  }
+  
+  .priority-low {
+    background-color: var(--info-color);
+  }
+  
+  /* 얇은 프로그레스 바 */
+  .progress-slim {
+    height: 8px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  
+  .progress-bar-slim {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+  
+  /* 데이터 없음 메시지 */
+  .no-data-message {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-light);
+  }
+  
+  .no-data-message i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--text-light);
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+  }
+  
+  /* 강조 행 효과 */
+  .highlight-row {
+    animation: highlight 2s;
+  }
+  
+  @keyframes highlight {
+    0% { background-color: rgba(255, 193, 7, 0.3); }
+    100% { background-color: transparent; }
+  }
+  
+  /* 모의 차트 스타일 */
+  .mock-chart {
+    display: flex;
+    height: 100px;
+    background-color: var(--secondary-color);
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  
+  .mock-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+    padding: 0 0.5rem;
+    transition: width 0.5s ease;
+  }
+  
+  .mock-bar:nth-child(1) {
+    background-color: var(--info-color);
+  }
+  
+  .mock-bar:nth-child(2) {
+    background-color: var(--primary-color);
+  }
+  
+  .mock-bar:nth-child(3) {
+    background-color: var(--success-color);
+  }
+  
+  /* 알림 토스트 */
+  .notification-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    min-width: 250px;
+    padding: 1rem;
+    border-radius: 5px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    animation: slideInRight 0.3s, fadeOut 0.5s 2.5s forwards;
+  }
+  
+  @keyframes slideInRight {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
+  
+  @keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+  
+  /* 스피너 */
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(77, 141, 110, 0.2);
+    border-radius: 50%;
+    border-top-color: var(--primary-color);
+    animation: spin 1s ease-in-out infinite;
+    margin: 0 auto;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  /* 반응형 디자인 */
+  @media (max-width: 992px) {
+    .tab-menu {
+      flex-direction: column;
+    }
+    
+    .tab-btn {
+      padding: 0.8rem;
+    }
+    
+    .card-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
+    .search-box, .filter-box {
+      width: 100%;
+    }
+    
+    .search-box input {
+      width: 100%;
+    }
+    
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .row .col-4,
+    .row .col-8 {
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    
+    .card {
+      margin-bottom: 1rem;
+    }
+    
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+  }

@@ -1,0 +1,1561 @@
+.then(response => {
+    this.tasks = response.data || [];
+    this.renderTasksTable();
+  })
+  .catch(error => {
+    console.error('작업 데이터 로드 실패:', error);
+    showNotification('작업 데이터를 불러오는 중 오류가 발생했습니다.', 'danger');
+    
+    // 오류 표시
+    document.getElementById('tasksTable').querySelector('tbody').innerHTML = `
+      <tr>
+        <td colspan="8" class="text-center text-danger">
+          <i class="fas fa-exclamation-circle"></i>
+          <p>작업 데이터를 불러오지 못했습니다. 다시 시도해주세요.</p>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+/**
+* AGV 데이터 로드
+*/
+loadAgvs() {
+// 로딩 표시
+document.getElementById('agvTable').querySelector('tbody').innerHTML = `
+  <tr>
+    <td colspan="6" class="text-center">
+      <div class="spinner"></div>
+      <p class="mt-2">AGV 데이터를 불러오는 중...</p>
+    </td>
+  </tr>
+`;
+
+// API 호출 (모의 데이터)
+apiRequest('/api/agv/status')
+  .then(response => {
+    this.agvs = response.data || [];
+    this.renderAgvTable();
+  })
+  .catch(error => {
+    console.error('AGV 데이터 로드 실패:', error);
+    showNotification('AGV 데이터를 불러오는 중 오류가 발생했습니다.', 'danger');
+    
+    // 오류 표시
+    document.getElementById('agvTable').querySelector('tbody').innerHTML = `
+      <tr>
+        <td colspan="6" class="text-center text-danger">
+          <i class="fas fa-exclamation-circle"></i>
+          <p>AGV 데이터를 불러오지 못했습니다. 다시 시도해주세요.</p>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+/**
+* 작업 테이블 렌더링
+*/
+renderTasksTable() {
+const tableBody = document.getElementById('tasksTable').querySelector('tbody');
+
+// 테이블 내용 초기화
+tableBody.innerHTML = '';
+
+// 작업이 없는 경우
+if (this.tasks.length === 0) {
+  tableBody.innerHTML = `
+    <tr>
+      <td colspan="8" class="no-data-message">
+        <i class="fas fa-clipboard-list"></i>
+        <p>등록된 작업이 없습니다.</p>
+        <button class="btn btn-sm btn-primary" onclick="document.getElementById('createTaskButton').click()">
+          작업 생성하기
+        </button>
+      </td>
+    </tr>
+  `;
+  return;
+}
+
+// 필터링 및 페이지네이션 적용
+const filteredTasks = this.getFilteredTasks();
+const paginatedTasks = this.getPaginatedItems(filteredTasks);
+
+// 테이블 행 생성
+paginatedTasks.forEach(task => {
+  const row = document.createElement('tr');
+  
+  // 선택된 작업 강조
+  if (this.selectedTask && this.selectedTask.id === task.id) {
+    row.classList.add('selected');
+  }
+  
+  // 클릭 이벤트
+  row.addEventListener('click', () => {
+    this.selectTask(task);
+  });
+  
+  // 셀 내용 구성
+  row.innerHTML = `
+    <td>${task.id}</td>
+    <td><span class="badge ${getStatusBadgeClass(task.status)}">${getTaskStatusText(task.status)}</span></td>
+    <td><span class="priority-badge priority-${task.priority}">${getPriorityText(task.priority)}</span></td>
+    <td>${task.startPoint}</td>
+    <td>${task.endPoint}</td>
+    <td>${task.assignedTo || '-'}</td>
+    <td>
+      <div class="progress-slim">
+        <div class="progress-bar-slim ${task.progress < 30 ? 'bg-danger' : task.progress < 70 ? 'bg-warning' : 'bg-success'}" style="width: ${task.progress}%;"></div>
+      </div>
+      <div class="d-flex justify-content-between mt-1">
+        <small>${task.progress}%</small>
+        <small>${getTaskStatusText(task.status)}</small>
+      </div>
+    </td>
+    <td>
+      <button class="btn btn-sm btn-primary action-btn" data-action="edit" data-id="${task.id}">
+        <i class="fas fa-edit"></i>
+      </button>
+      <button class="btn btn-sm btn-danger action-btn" data-action="delete" data-id="${task.id}">
+        <i class="fas fa-trash-alt"></i>
+      </button>
+    </td>
+  `;
+  
+  // 행 액션 버튼 이벤트
+  const actionButtons = row.querySelectorAll('.action-btn');
+  actionButtons.forEach(button => {
+    button.addEventListener('click', (e) => {
+      e.stopPropagation(); // 행 클릭 이벤트 전파 방지
+      const action = button.getAttribute('data-action');
+      const taskId = button.getAttribute('data-id');
+      
+      if (action === 'edit') {
+        this.editTask(taskId);
+      } else if (action === 'delete') {
+        this.deleteTask(taskId);
+      }
+    });
+  });
+  
+  tableBody.appendChild(row);
+});
+
+// 페이지네이션 업데이트
+this.updatePagination(filteredTasks.length);
+}
+
+/**
+* AGV 테이블 렌더링
+*/
+renderAgvTable() {
+const tableBody = document.getElementById('agvTable').querySelector('tbody');
+
+// 테이블 내용 초기화
+tableBody.innerHTML = '';
+
+// AGV가 없는 경우
+if (this.agvs.length === 0) {
+  tableBody.innerHTML = `
+    <tr>
+      <td colspan="6" class="no-data-message">
+        <i class="fas fa-robot"></i>
+        <p>등록된 AGV가 없습니다.</p>
+        <button class="btn btn-sm btn-primary" onclick="document.getElementById('addAgvButton').click()">
+          AGV 추가하기
+        </button>
+      </td>
+    </tr>
+  `;
+  return;
+}
+
+// 테이블 행 생성
+this.agvs.forEach(agv => {
+  const row = document.createElement('tr');
+  
+  // 선택된 AGV 강조
+  if (this.selectedAgv && this.selectedAgv.id === agv.id) {
+    row.classList.add('selected');
+  }
+  
+  // 클릭 이벤트
+  row.addEventListener('click', () => {
+    this.selectAgv(agv);
+  });
+  
+  // 배터리 수준에 따른 클래스
+  const batteryClass = agv.battery >= 70 ? 'agv-battery-high' : 
+                    agv.battery >= 30 ? 'agv-battery-medium' : 'agv-battery-low';
+  
+  // 셀 내용 구성
+  row.innerHTML = `
+    <td>${agv.id}</td>
+    <td><span class="badge ${getStatusBadgeClass(agv.status)}">${getAgvStatusText(agv.status)}</span></td>
+    <td>
+      <div class="agv-battery-bar">
+        <div class="agv-battery-fill ${batteryClass}" style="width: ${agv.battery}%;"></div>
+      </div>
+      <small>${agv.battery}%</small>
+    </td>
+    <td>${agv.location}</td>
+    <td>${agv.currentTask || '-'}</td>
+    <td>
+      <button class="btn btn-sm btn-primary action-btn" data-action="control" data-id="${agv.id}">
+        <i class="fas fa-cog"></i>
+      </button>
+      <button class="btn btn-sm btn-danger action-btn" data-action="remove" data-id="${agv.id}">
+        <i class="fas fa-trash-alt"></i>
+      </button>
+    </td>
+  `;
+  
+  // 행 액션 버튼 이벤트
+  const actionButtons = row.querySelectorAll('.action-btn');
+  actionButtons.forEach(button => {
+    button.addEventListener('click', (e) => {
+      e.stopPropagation(); // 행 클릭 이벤트 전파 방지
+      const action = button.getAttribute('data-action');
+      const agvId = button.getAttribute('data-id');
+      
+      if (action === 'control') {
+        this.controlAgv(agvId);
+      } else if (action === 'remove') {
+        this.removeAgv(agvId);
+      }
+    });
+  });
+  
+  tableBody.appendChild(row);
+});
+}
+
+/**
+* 필터링된 작업 목록 가져오기
+* @returns {Array} 필터링된 작업 목록
+*/
+getFilteredTasks() {
+const searchQuery = document.getElementById('taskSearchInput').value.toLowerCase();
+const statusFilter = document.getElementById('taskStatusFilter').value;
+
+return this.tasks.filter(task => {
+  // 검색어 필터링
+  const matchesSearch = 
+    task.id.toLowerCase().includes(searchQuery) ||
+    task.startPoint.toLowerCase().includes(searchQuery) ||
+    task.endPoint.toLowerCase().includes(searchQuery) ||
+    (task.assignedTo && task.assignedTo.toLowerCase().includes(searchQuery));
+  
+  // 상태 필터링
+  const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
+  
+  return matchesSearch && matchesStatus;
+});
+}
+
+/**
+* 페이지네이션 적용된 항목 가져오기
+* @param {Array} items - 전체 항목 배열
+* @returns {Array} 현재 페이지에 표시할 항목 배열
+*/
+getPaginatedItems(items) {
+const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+const endIndex = startIndex + this.itemsPerPage;
+return items.slice(startIndex, endIndex);
+}
+
+/**
+* 페이지네이션 UI 업데이트
+* @param {number} totalItems - 전체 항목 수
+*/
+updatePagination(totalItems) {
+const totalPages = Math.ceil(totalItems / this.itemsPerPage);
+const paginationElement = document.getElementById('tasksPagination');
+
+// 페이지네이션 내용 초기화
+paginationElement.innerHTML = '';
+
+// 페이지가 1페이지밖에 없으면 페이지네이션 표시 안 함
+if (totalPages <= 1) {
+  return;
+}
+
+// 이전 페이지 버튼
+const prevItem = document.createElement('div');
+prevItem.className = `page-item ${this.currentPage === 1 ? 'disabled' : ''}`;
+prevItem.innerHTML = `<a class="page-link" href="#" ${this.currentPage === 1 ? 'tabindex="-1"' : ''}>&laquo;</a>`;
+if (this.currentPage > 1) {
+  prevItem.querySelector('a').addEventListener('click', (e) => {
+    e.preventDefault();
+    this.goToPage(this.currentPage - 1);
+  });
+}
+paginationElement.appendChild(prevItem);
+
+// 페이지 번호 버튼
+for (let i = 1; i <= totalPages; i++) {
+  const pageItem = document.createElement('div');
+  pageItem.className = `page-item ${this.currentPage === i ? 'active' : ''}`;
+  pageItem.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+  pageItem.querySelector('a').addEventListener('click', (e) => {
+    e.preventDefault();
+    this.goToPage(i);
+  });
+  paginationElement.appendChild(pageItem);
+}
+
+// 다음 페이지 버튼
+const nextItem = document.createElement('div');
+nextItem.className = `page-item ${this.currentPage === totalPages ? 'disabled' : ''}`;
+nextItem.innerHTML = `<a class="page-link" href="#" ${this.currentPage === totalPages ? 'tabindex="-1"' : ''}>&raquo;</a>`;
+if (this.currentPage < totalPages) {
+  nextItem.querySelector('a').addEventListener('click', (e) => {
+    e.preventDefault();
+    this.goToPage(this.currentPage + 1);
+  });
+}
+paginationElement.appendChild(nextItem);
+}
+
+/**
+* 페이지 이동
+* @param {number} pageNumber - 이동할 페이지 번호
+*/
+goToPage(pageNumber) {
+this.currentPage = pageNumber;
+this.renderTasksTable();
+}
+
+/**
+* 작업 필터링
+*/
+filterTasks() {
+this.currentPage = 1; // 필터링 시 첫 페이지로 이동
+this.renderTasksTable();
+}
+
+/**
+* 작업 선택
+* @param {Object} task - 선택할 작업 객체
+*/
+selectTask(task) {
+this.selectedTask = task;
+
+// 테이블에서 선택된 행 강조
+const rows = document.querySelectorAll('#tasksTable tbody tr');
+rows.forEach(row => {
+  row.classList.remove('selected');
+});
+
+// 선택된 작업 상세 정보 패널 업데이트
+this.updateTaskDetailsPanel();
+
+// 작업 할당 패널 업데이트
+this.updateTaskAssignmentPanel();
+
+// 작업 테이블 다시 렌더링
+this.renderTasksTable();
+}
+
+/**
+* AGV 선택
+* @param {Object} agv - 선택할 AGV 객체
+*/
+selectAgv(agv) {
+this.selectedAgv = agv;
+
+// 테이블에서 선택된 행 강조
+const rows = document.querySelectorAll('#agvTable tbody tr');
+rows.forEach(row => {
+  row.classList.remove('selected');
+});
+
+// 선택된 AGV 상세 정보 패널 업데이트
+this.updateAgvDetailsPanel();
+
+// AGV 제어 패널 업데이트
+this.updateAgvControlPanel();
+
+// AGV 테이블 다시 렌더링
+this.renderAgvTable();
+}
+
+/**
+* 작업 상세 정보 패널 업데이트
+*/
+updateTaskDetailsPanel() {
+const detailsPanel = document.getElementById('taskDetailsPanel');
+
+if (!this.selectedTask) {
+  detailsPanel.innerHTML = `
+    <div class="text-center p-4">
+      <i class="fas fa-info-circle text-light mb-3" style="font-size: 3rem;"></i>
+      <p>작업을 선택하여 세부 정보를 확인하세요.</p>
+    </div>
+  `;
+  return;
+}
+
+const task = this.selectedTask;
+
+// 마감 시간 포맷팅
+let deadlineText = '없음';
+if (task.deadline) {
+  const deadline = new Date(task.deadline);
+  const now = new Date();
+  const isOverdue = deadline < now && task.status !== 'completed';
+  
+  deadlineText = `${formatDate(task.deadline, 'YYYY-MM-DD HH:mm')} 
+    ${isOverdue ? '<span class="text-danger">(기한 초과)</span>' : ''}`;
+}
+
+// 생성 및 수정 시간 포맷팅
+const createdAt = task.createdAt ? formatDate(task.createdAt, 'YYYY-MM-DD HH:mm') : '-';
+const updatedAt = task.updatedAt ? formatDate(task.updatedAt, 'YYYY-MM-DD HH:mm') : '-';
+
+detailsPanel.innerHTML = `
+  <div class="task-details">
+    <div class="mb-3">
+      <h3>${task.name || task.id}</h3>
+      <span class="badge ${getStatusBadgeClass(task.status)}">${getTaskStatusText(task.status)}</span>
+      <span class="priority-badge priority-${task.priority}">${getPriorityText(task.priority)}</span>
+    </div>
+    
+    <div class="detail-group">
+      <div class="detail-label">작업 ID</div>
+      <div class="detail-value">${task.id}</div>
+    </div>
+    
+    <div class="detail-group">
+      <div class="detail-label">출발 지점</div>
+      <div class="detail-value">${task.startPoint}</div>
+    </div>
+    
+    <div class="detail-group">
+      <div class="detail-label">도착 지점</div>
+      <div class="detail-value">${task.endPoint}</div>
+    </div>
+    
+    <div class="detail-group">
+      <div class="detail-label">할당된 AGV</div>
+      <div class="detail-value">${task.assignedTo || '없음'}</div>
+    </div>
+    
+    <div class="detail-group">
+      <div class="detail-label">마감 시간</div>
+      <div class="detail-value">${deadlineText}</div>
+    </div>
+    
+    <div class="detail-group">
+      <div class="detail-label">진행률</div>
+      <div class="detail-value">
+        <div class="progress-slim">
+          <div class="progress-bar-slim ${task.progress < 30 ? 'bg-danger' : task.progress < 70 ? 'bg-warning' : 'bg-success'}" style="width: ${task.progress}%;"></div>
+        </div>
+        <small>${task.progress}%</small>
+      </div>
+    </div>
+    
+    <div class="detail-group">
+      <div class="detail-label">생성 시간</div>
+      <div class="detail-value">${createdAt}</div>
+    </div>
+    
+    <div class="detail-group">
+      <div class="detail-label">마지막 업데이트</div>
+      <div class="detail-value">${updatedAt}</div>
+    </div>
+    
+    ${task.description ? `
+      <div class="task-description">
+        ${task.description}
+      </div>
+    ` : ''}
+  </div>
+`;
+}
+
+/**
+* AGV 상세 정보 패널 업데이트
+*/
+updateAgvDetailsPanel() {
+const detailsPanel = document.getElementById('agvDetailsPanel');
+
+if (!this.selectedAgv) {
+  detailsPanel.innerHTML = `
+    <div class="text-center p-4">
+      <i class="fas fa-robot text-light mb-3" style="font-size: 3rem;"></i>
+      <p>AGV를 선택하여 세부 정보를 확인하세요.</p>
+    </div>
+  `;
+  return;
+}
+
+const agv = this.selectedAgv;
+
+// 배터리 수준에 따른 클래스
+const batteryClass = agv.battery >= 70 ? 'agv-battery-high' : 
+                  agv.battery >= 30 ? 'agv-battery-medium' : 'agv-battery-low';
+
+// 배터리 상태 텍스트
+let batteryStatusText = '정상';
+if (agv.battery < 20) {
+  batteryStatusText = '<span class="text-danger">충전 필요</span>';
+} else if (agv.battery < 50) {
+  batteryStatusText = '<span class="text-warning">낮음</span>';
+}
+
+// 상태 표시 색상
+const statusColor = agv.status === 'active' ? 'var(--success-color)' :
+                  agv.status === 'idle' ? 'var(--info-color)' :
+                  agv.status === 'charging' ? 'var(--warning-color)' : 'var(--danger-color)';
+
+detailsPanel.innerHTML = `
+  <div class="agv-details">
+    <div class="mb-3">
+      <h3>${agv.id}</h3>
+      <div>
+        <span class="agv-status-indicator" style="background-color: ${statusColor};"></span>
+        <span class="badge ${getStatusBadgeClass(agv.status)}">${getAgvStatusText(agv.status)}</span>
+      </div>
+    </div>
+    
+    <div class="agv-detail-group">
+      <div class="detail-label">AGV ID</div>
+      <div class="detail-value">${agv.id}</div>
+    </div>
+    
+    <div class="agv-detail-group">
+      <div class="detail-label">현재 위치</div>
+      <div class="detail-value">${agv.location}</div>
+    </div>
+    
+    <div class="agv-detail-group">
+      <div class="detail-label">현재 작업</div>
+      <div class="detail-value">${agv.currentTask || '없음'}</div>
+    </div>
+    
+    <div class="agv-detail-group">
+      <div class="detail-label">배터리 상태</div>
+      <div class="detail-value">
+        <div class="agv-battery-bar">
+          <div class="agv-battery-fill ${batteryClass}" style="width: ${agv.battery}%;"></div>
+        </div>
+        <div class="d-flex justify-content-between">
+          <small>${agv.battery}%</small>
+          <small>${batteryStatusText}</small>
+        </div>
+      </div>
+    </div>
+    
+    <div class="agv-detail-group">
+      <div class="detail-label">작업 이력</div>
+      <div class="agv-task-history">
+        <div class="history-item">
+          <div>최근 작업 기록이 없습니다.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+`;
+}
+
+/**
+* 작업 할당 패널 업데이트
+*/
+updateTaskAssignmentPanel() {
+const assignmentPanel = document.getElementById('taskAssignmentPanel');
+const assignButton = document.getElementById('assignTaskButton');
+
+if (!this.selectedTask) {
+  assignmentPanel.innerHTML = `
+    <div class="text-center p-3">
+      <p>할당할 작업을 선택하세요.</p>
+    </div>
+  `;
+  assignButton.disabled = true;
+  return;
+}
+
+// 이미 할당된 작업이고 진행 중인 경우
+if (this.selectedTask.assignedTo && this.selectedTask.status === 'in-progress') {
+  assignmentPanel.innerHTML = `
+    <div class="text-center p-3">
+      <p>이 작업은 이미 <strong>${this.selectedTask.assignedTo}</strong>에 할당되어 진행 중입니다.</p>
+      <button class="btn btn-sm btn-warning" id="reassignTaskButton">
+        <i class="fas fa-redo"></i> 재할당
+      </button>
+    </div>
+  `;
+  
+  // 재할당 버튼 이벤트
+  document.getElementById('reassignTaskButton').addEventListener('click', () => {
+    this.showAgvOptions();
+  });
+  
+  assignButton.disabled = true;
+  return;
+}
+
+// 작업이 완료된 경우
+if (this.selectedTask.status === 'completed') {
+  assignmentPanel.innerHTML = `
+    <div class="text-center p-3">
+      <p>이 작업은 이미 완료되었습니다.</p>
+    </div>
+  `;
+  assignButton.disabled = true;
+  return;
+}
+
+// AGV 옵션 표시
+this.showAgvOptions();
+}
+
+/**
+* AGV 옵션 표시
+*/
+showAgvOptions() {
+const assignmentPanel = document.getElementById('taskAssignmentPanel');
+const assignButton = document.getElementById('assignTaskButton');
+
+// 사용 가능한 AGV 필터링 (상태가 idle이거나 현재 선택된 작업에 이미 할당된 AGV)
+const availableAgvs = this.agvs.filter(agv => 
+  agv.status === 'idle' || 
+  (this.selectedTask && agv.id === this.selectedTask.assignedTo)
+);
+
+if (availableAgvs.length === 0) {
+  assignmentPanel.innerHTML = `
+    <div class="text-center p-3">
+      <p>현재 사용 가능한 AGV가 없습니다.</p>
+    </div>
+  `;
+  assignButton.disabled = true;
+  return;
+}
+
+let optionsHtml = `
+  <div class="assignment-group">
+    <div class="detail-label">작업:</div>
+    <div class="detail-value">${this.selectedTask.id} (${this.selectedTask.startPoint} → ${this.selectedTask.endPoint})</div>
+  </div>
+  <div class="assignment-group">
+    <div class="detail-label">사용 가능한 AGV:</div>
+    <div class="agv-options">
+`;
+
+availableAgvs.forEach(agv => {
+  // 배터리 수준에 따른 클래스
+  const batteryClass = agv.battery >= 70 ? 'text-success' : 
+                    agv.battery >= 30 ? 'text-warning' : 'text-danger';
+  
+  // 이미 선택된 AGV인지 확인
+  const isSelected = this.selectedAgv && this.selectedAgv.id === agv.id;
+  
+  optionsHtml += `
+    <div class="agv-option ${isSelected ? 'selected' : ''}" data-agv-id="${agv.id}">
+      <div class="agv-option-icon">
+        <i class="fas fa-robot"></i>
+      </div>
+      <div class="agv-option-info">
+        <div class="agv-option-name">${agv.id}</div>
+        <div class="agv-option-status">${agv.location}</div>
+      </div>
+      <div class="agv-option-battery ${batteryClass}">
+        ${agv.battery}%
+      </div>
+    </div>
+  `;
+});
+
+optionsHtml += `
+    </div>
+  </div>
+`;
+
+assignmentPanel.innerHTML = optionsHtml;
+
+// AGV 옵션 클릭 이벤트
+const agvOptions = assignmentPanel.querySelectorAll('.agv-option');
+agvOptions.forEach(option => {
+  option.addEventListener('click', () => {
+    // 모든 옵션에서 선택 클래스 제거
+    agvOptions.forEach(opt => opt.classList.remove('selected'));
+    
+    // 클릭한 옵션에 선택 클래스 추가
+    option.classList.add('selected');
+    
+    // 선택된 AGV ID 가져오기
+    const agvId = option.getAttribute('data-agv-id');
+    
+    // 선택된 AGV 객체 찾기
+    this.selectedAgv = this.agvs.find(agv => agv.id === agvId);
+    
+    // 할당 버튼 활성화
+    assignButton.disabled = false;
+  });
+});
+
+// 아무 AGV도 선택되지 않았으면 할당 버튼 비활성화
+assignButton.disabled = !this.selectedAgv;
+}
+
+/**
+* AGV 제어 패널 업데이트
+*/
+updateAgvControlPanel() {
+const controlPanel = document.getElementById('agvControlPanel');
+
+if (!this.selectedAgv) {
+  controlPanel.innerHTML = `
+    <div class="text-center p-3">
+      <p>AGV를 선택하여 상태를 변경하세요.</p>
+    </div>
+  `;
+  return;
+}
+
+const agv = this.selectedAgv;
+
+controlPanel.innerHTML = `
+  <div class="text-center mb-3">
+    <h4>${agv.id} 제어</h4>
+    <p>현재 상태: <span class="badge ${getStatusBadgeClass(agv.status)}">${getAgvStatusText(agv.status)}</span></p>
+  </div>
+  <div class="control-buttons">
+    <button class="control-btn" data-status="idle" ${agv.status === 'idle' ? 'disabled' : ''}>
+      <i class="fas fa-pause"></i> 대기 상태로 변경
+    </button>
+    <button class="control-btn" data-status="charging" ${agv.status === 'charging' ? 'disabled' : ''}>
+      <i class="fas fa-charging-station"></i> 충전소로 이동
+    </button>
+    <button class="control-btn" data-status="maintenance" ${agv.status === 'maintenance' ? 'disabled' : ''}>
+      <i class="fas fa-tools"></i> 점검 모드
+    </button>
+  </div>
+`;
+
+// 제어 버튼 이벤트
+const controlButtons = controlPanel.querySelectorAll('.control-btn');
+controlButtons.forEach(button => {
+  if (!button.disabled) {
+    button.addEventListener('click', () => {
+      const newStatus = button.getAttribute('data-status');
+      this.changeAgvStatus(agv.id, newStatus);
+    });
+  }
+});
+}
+
+/**
+* 작업 생성 모달 표시
+*/
+showCreateTaskModal() {
+const modal = document.getElementById('createTaskModal');
+modal.style.display = 'block';
+
+// 폼 초기화
+document.getElementById('taskName').value = '';
+document.getElementById('taskPriority').value = 'medium';
+document.getElementById('taskStartPoint').value = '';
+document.getElementById('taskEndPoint').value = '';
+document.getElementById('taskDeadline').value = '';
+document.getElementById('taskDescription').value = '';
+}
+
+/**
+* AGV 추가 모달 표시
+*/
+showAddAgvModal() {
+const modal = document.getElementById('addAgvModal');
+modal.style.display = 'block';
+
+// 폼 초기화
+document.getElementById('agvId').value = '';
+document.getElementById('agvType').value = 'standard';
+document.getElementById('agvInitialLocation').value = '';
+document.getElementById('agvBatteryLevel').value = '100';
+}
+
+/**
+* 새 작업 저장
+*/
+saveTask() {
+// 폼 데이터 가져오기
+const name = document.getElementById('taskName').value;
+const priority = document.getElementById('taskPriority').value;
+const startPoint = document.getElementById('taskStartPoint').value;
+const endPoint = document.getElementById('taskEndPoint').value;
+const deadline = document.getElementById('taskDeadline').value;
+const description = document.getElementById('taskDescription').value;
+
+// 필수 필드 검증
+if (!startPoint || !endPoint) {
+  showNotification('출발 지점과 도착 지점은 필수 입력 항목입니다.', 'warning');
+  return;
+}
+
+// 작업 데이터 구성
+const taskData = {
+  name: name || `작업-${Date.now().toString().slice(-4)}`,
+  priority,
+  startPoint,
+  endPoint,
+  deadline: deadline || null,
+  description,
+  status: 'pending',
+  progress: 0,
+  assignedTo: null,
+  createdAt: new Date().toISOString()
+};
+
+// 모달 닫기
+document.getElementById('createTaskModal').style.display = 'none';
+
+// 로딩 표시
+showNotification('작업을 생성 중입니다...', 'info');
+
+// 실제 구현에서는 API 호출
+setTimeout(() => {
+  // 새 작업 ID 생성 (실제 구현에서는 서버에서 할당)
+  const newTaskId = `TASK-${Date.now().toString().slice(-6)}`;
+  taskData.id = newTaskId;
+  
+  // 작업 목록에 추가
+  this.tasks.unshift(taskData);
+  
+  // 테이블 갱신
+  this.renderTasksTable();
+  
+  showNotification('새 작업이 성공적으로 생성되었습니다.', 'success');
+}, 1000);
+}
+
+/**
+* 새 AGV 저장
+*/
+saveAgv() {
+// 폼 데이터 가져오기
+const id = document.getElementById('agvId').value;
+const type = document.getElementById('agvType').value;
+const location = document.getElementById('agvInitialLocation').value;
+const battery = parseInt(document.getElementById('agvBatteryLevel').value);
+
+// 필수 필드 검증
+if (!id || !location) {
+  showNotification('AGV ID와 초기 위치는 필수 입력 항목입니다.', 'warning');
+  return;
+}
+
+// 중복 ID 검사
+if (this.agvs.some(agv => agv.id === id)) {
+  showNotification('이미 존재하는 AGV ID입니다.', 'danger');
+  return;
+}
+
+// AGV 데이터 구성
+const agvData = {
+  id,
+  type,
+  location,
+  battery,
+  status: 'idle',
+  currentTask: null
+};
+
+// 모달 닫기
+document.getElementById('addAgvModal').style.display = 'none';
+
+// 로딩 표시
+showNotification('AGV를 추가 중입니다...', 'info');
+
+// 실제 구현에서는 API 호출
+setTimeout(() => {
+  // AGV 목록에 추가
+  this.agvs.push(agvData);
+  
+  // 테이블 갱신
+  this.renderAgvTable();
+  
+  showNotification('새 AGV가 성공적으로 추가되었습니다.', 'success');
+}, 1000);
+}
+
+/**
+* 작업을 AGV에 할당
+*/
+assignTaskToAgv() {
+if (!this.selectedTask || !this.selectedAgv) {
+  showNotification('작업과 AGV를 모두 선택해야 합니다.', 'warning');
+  return;
+}
+
+const task = this.selectedTask;
+const agv = this.selectedAgv;
+
+// 이미 이 AGV에 할당된 경우
+if (task.assignedTo === agv.id && task.status === 'in-progress') {
+  showNotification('이 작업은 이미 선택한 AGV에 할당되었습니다.', 'info');
+  return;
+}
+
+// AGV가 이미 다른 작업 중인 경우
+if (agv.status === 'active' && agv.currentTask && agv.currentTask !== task.id) {
+  showNotification(`${agv.id}는 이미 ${agv.currentTask} 작업 중입니다.`, 'warning');
+  return;
+}
+
+// 로딩 표시
+showNotification('작업을 할당 중입니다...', 'info');
+
+// 실제 구현에서는 API 호출
+setTimeout(() => {
+  // 작업 상태 업데이트
+  task.status = 'in-progress';
+  task.assignedTo = agv.id;
+  task.progress = 0;
+  task.updatedAt = new Date().toISOString();
+  
+  // AGV 상태 업데이트
+  agv.status = 'active';
+  agv.currentTask = task.id;
+  
+  // 테이블 갱신
+  this.renderTasksTable();
+  this.renderAgvTable();
+  
+  // 패널 업데이트
+  this.updateTaskDetailsPanel();
+  this.updateTaskAssignmentPanel();
+  this.updateAgvDetailsPanel();
+  this.updateAgvControlPanel();
+  
+  showNotification(`작업 ${task.id}가 AGV ${agv.id}에 성공적으로 할당되었습니다.`, 'success');
+}, 1000);
+}
+
+/**
+* 작업 편집
+* @param {string} taskId - 편집할 작업 ID
+*/
+editTask(taskId) {
+const task = this.tasks.find(t => t.id === taskId);
+if (!task) return;
+
+// 선택된 작업 업데이트
+this.selectedTask = task;
+
+// 작업 상세 정보 패널 및 할당 패널 업데이트
+this.updateTaskDetailsPanel();
+this.updateTaskAssignmentPanel();
+
+// 사용자에게 선택 알림
+showNotification(`${task.id} 작업이 선택되었습니다. 상세 정보를 확인하세요.`, 'info');
+}
+
+/**
+* 작업 삭제
+* @param {string} taskId - 삭제할 작업 ID
+*/
+deleteTask(taskId) {
+const task = this.tasks.find(t => t.id === taskId);
+if (!task) return;
+
+if (!confirm(`작업 ${taskId}를 삭제하시겠습니까?`)) {
+  return;
+}
+
+// 진행 중인 작업은 삭제 불가
+if (task.status === 'in-progress') {
+  showNotification('진행 중인 작업은 삭제할 수 없습니다. 먼저 작업을 중단하세요.', 'warning');
+  return;
+}
+
+// 로딩 표시
+showNotification('작업을 삭제 중입니다...', 'info');
+
+// 실제 구현에서는 API 호출
+setTimeout(() => {
+  // 작업 목록에서 제거
+  this.tasks = this.tasks.filter(t => t.id !== taskId);
+  
+  // 선택된 작업이 삭제된 경우 초기화
+  if (this.selectedTask && this.selectedTask.id === taskId) {
+    this.selectedTask = null;
+    this.updateTaskDetailsPanel();
+    this.updateTaskAssignmentPanel();
+  }
+  
+  // 테이블 갱신
+  this.renderTasksTable();
+  
+  showNotification('작업이 성공적으로 삭제되었습니다.', 'success');
+}, 1000);
+}
+
+/**
+* AGV 제어/상태 변경
+* @param {string} agvId - AGV ID
+*/
+controlAgv(agvId) {
+const agv = this.agvs.find(a => a.id === agvId);
+if (!agv) return;
+
+// 선택된 AGV 업데이트
+this.selectedAgv = agv;
+
+// AGV 상세 정보 패널 및 제어 패널 업데이트
+this.updateAgvDetailsPanel();
+this.updateAgvControlPanel();
+
+// 사용자에게 선택 알림
+showNotification(`${agv.id} AGV가 선택되었습니다. 제어 패널을 확인하세요.`, 'info');
+}
+
+/**
+* AGV 상태 변경
+* @param {string} agvId - AGV ID
+* @param {string} newStatus - 새 상태
+*/
+changeAgvStatus(agvId, newStatus) {
+const agv = this.agvs.find(a => a.id === agvId);
+if (!agv) return;
+
+// 작업 중인 AGV는 상태 변경 불가
+if (agv.status === 'active' && agv.currentTask) {
+  showNotification('작업 중인 AGV의 상태는 변경할 수 없습니다. 먼저 작업을 완료하거나 취소하세요.', 'warning');
+  return;
+}
+
+// 로딩 표시
+showNotification('AGV 상태를 변경 중입니다...', 'info');
+
+// 실제 구현에서는 API 호출
+setTimeout(() => {
+  // AGV 상태 업데이트
+  agv.status = newStatus;
+  
+  // 테이블 갱신
+  this.renderAgvTable();
+  
+  // 패널 업데이트
+  this.updateAgvDetailsPanel();
+  this.updateAgvControlPanel();
+  
+  showNotification(`AGV ${agv.id}의 상태가 ${getAgvStatusText(newStatus)}(으)로 변경되었습니다.`, 'success');
+}, 1000);
+}
+
+/**
+* AGV 제거
+* @param {string} agvId - 제거할 AGV ID
+*/
+removeAgv(agvId) {
+const agv = this.agvs.find(a => a.id === agvId);
+if (!agv) return;
+
+if (!confirm(`AGV ${agvId}를 제거하시겠습니까?`)) {
+  return;
+}
+
+// 작업 중인 AGV는 제거 불가
+if (agv.status === 'active' && agv.currentTask) {
+  showNotification('작업 중인 AGV는 제거할 수 없습니다. 먼저 작업을 완료하거나 취소하세요.', 'warning');
+  return;
+}
+
+// 로딩 표시
+showNotification('AGV를 제거 중입니다...', 'info');
+
+// 실제 구현에서는 API 호출
+setTimeout(() => {
+  // AGV 목록에서 제거
+  this.agvs = this.agvs.filter(a => a.id !== agvId);
+  
+  // 선택된 AGV가 제거된 경우 초기화
+  if (this.selectedAgv && this.selectedAgv.id === agvId) {
+    this.selectedAgv = null;
+    this.updateAgvDetailsPanel();
+    this.updateAgvControlPanel();
+  }
+  
+  // 테이블 갱신
+  this.renderAgvTable();
+  
+  showNotification('AGV가 성공적으로 제거되었습니다.', 'success');
+}, 1000);
+}
+
+/**
+* 알고리즘 설명 업데이트
+* @param {string} algorithm - 알고리즘 유형
+*/
+updateAlgorithmDescription(algorithm) {
+const descriptionElement = document.getElementById('algorithmDescription');
+
+switch (algorithm) {
+  case 'fifo':
+    descriptionElement.innerHTML = `
+      <h4>FIFO (First In, First Out)</h4>
+      <p>작업이 생성된 순서대로 처리하는 가장 기본적인 알고리즘입니다.</p>
+      <ul>
+        <li>간단하고 공정한 방식</li>
+        <li>모든 작업을 순차적으로 처리</li>
+        <li>우선순위나 효율성을 고려하지 않음</li>
+      </ul>
+    `;
+    break;
+  case 'priority':
+    descriptionElement.innerHTML = `
+      <h4>우선순위 기반</h4>
+      <p>작업의 우선순위에 따라 높은 우선순위부터 처리하는 알고리즘입니다.</p>
+      <ul>
+        <li>중요한 작업 먼저 처리</li>
+        <li>낮은 우선순위 작업은 지연될 수 있음</li>
+        <li>기아 상태 방지 로직 필요</li>
+      </ul>
+    `;
+    break;
+  case 'deadline':
+    descriptionElement.innerHTML = `
+      <h4>납기일 기반</h4>
+      <p>작업의 마감 시간이 가까운 것부터 처리하는 알고리즘입니다.</p>
+      <ul>
+        <li>기한 준수율 향상</li>
+        <li>긴급한 작업 우선 처리</li>
+        <li>마감이 없는 작업은 후순위로 밀릴 수 있음</li>
+      </ul>
+    `;
+    break;
+  case 'nearest':
+    descriptionElement.innerHTML = `
+      <h4>최근접 위치 기반</h4>
+      <p>AGV의 현재 위치에서 가장 가까운 작업부터 처리하는 알고리즘입니다.</p>
+      <ul>
+        <li>이동 거리 최소화</li>
+        <li>에너지 효율성 증가</li>
+        <li>원거리 작업이 지연될 수 있음</li>
+      </ul>
+    `;
+    break;
+  case 'custom':
+    descriptionElement.innerHTML = `
+      <h4>사용자 정의</h4>
+      <p>여러 요소를 가중치에 따라 조합하여 사용자가 정의한 알고리즘입니다.</p>
+      <ul>
+        <li>시급성, 거리, 배터리 등 다양한 요소 고려</li>
+        <li>환경과 요구사항에 맞게 조정 가능</li>
+        <li>가중치 설정에 따라 결과가 크게 달라짐</li>
+      </ul>
+    `;
+    break;
+}
+}
+
+/**
+* 스케줄링 설정 적용
+*/
+applySchedulingSettings() {
+// 설정 값 가져오기
+this.schedulingAlgorithm = document.getElementById('schedulingAlgorithm').value;
+this.urgencyWeight = parseInt(document.getElementById('urgencyWeight').value);
+this.distanceWeight = parseInt(document.getElementById('distanceWeight').value);
+this.batteryWeight = parseInt(document.getElementById('batteryWeight').value);
+this.replanInterval = parseInt(document.getElementById('replanInterval').value);
+
+// 실제 구현에서는 API 호출
+showNotification('스케줄링 설정이 적용되었습니다.', 'success');
+}
+
+/**
+* 배치 작업 예약
+*/
+scheduleBatchJob() {
+const scheduleTime = document.getElementById('batchScheduleTime').value;
+
+if (!scheduleTime) {
+  showNotification('예약 시간을 입력하세요.', 'warning');
+  return;
+}
+
+// 실제 구현에서는 API 호출
+showNotification(`배치 작업이 ${formatDate(scheduleTime, 'YYYY-MM-DD HH:mm')}에 예약되었습니다.`, 'success');
+}
+
+/**
+* 배치 작업 실행
+*/
+runBatchJob() {
+// 로딩 표시
+showNotification('배치 작업을 실행 중입니다...', 'info');
+
+// 실제 구현에서는 API 호출
+setTimeout(() => {
+  showNotification('배치 작업이 성공적으로 실행되었습니다.', 'success');
+  
+  // 통계 업데이트
+  this.updateStatistics();
+}, 2000);
+}
+
+/**
+* 통계 업데이트
+*/
+updateStatistics() {
+// 모의 통계 데이터
+const stats = {
+  totalTasksProcessed: 157,
+  avgProcessingTime: 12.3,
+  agvUtilization: 78.5,
+  energyEfficiency: 'A+'
+};
+
+// 통계 표시
+document.getElementById('totalTasksProcessed').textContent = stats.totalTasksProcessed;
+document.getElementById('avgProcessingTime').textContent = `${stats.avgProcessingTime}분`;
+document.getElementById('agvUtilization').textContent = `${stats.agvUtilization}%`;
+document.getElementById('energyEfficiency').textContent = stats.energyEfficiency;
+
+// 여기에 차트 생성/업데이트 로직 추가
+this.renderStatisticsChart();
+}
+
+/**
+* 통계 차트 렌더링
+*/
+renderStatisticsChart() {
+const chartContainer = document.getElementById('statisticsChart');
+
+// 모의 차트 데이터
+chartContainer.innerHTML = `
+  <div class="text-center">
+    <div style="width: 100%; height: 100%; background-color: var(--secondary-color); border-radius: 5px; padding: 2rem; display: flex; align-items: center; justify-content: center;">
+      <p>여기에 스케줄링 성능 차트가 표시됩니다.<br>(실제 구현 시 Plotly나 Chart.js 등의 라이브러리 사용)</p>
+    </div>
+  </div>
+`;
+}
+
+/**
+* 통계 내보내기
+*/
+exportStatistics() {
+// 내보내기 로직
+showNotification('통계 데이터가 CSV 파일로 내보내졌습니다.', 'success');
+}
+}
+
+/**
+* AGV 상태 텍스트 변환
+* @param {string} status - 상태 코드
+* @returns {string} 상태 텍스트
+*/
+function getAgvStatusText(status) {
+const statusMap = {
+'active': '가동 중',
+'idle': '대기 중',
+'charging': '충전 중',
+'maintenance': '점검 중',
+'error': '오류'
+};
+
+return statusMap[status] || status;
+}
+
+/**
+* 작업 상태 텍스트 변환
+* @param {string} status - 상태 코드
+* @returns {string} 상태 텍스트
+*/
+function getTaskStatusText(status) {
+const statusMap = {
+'pending': '대기 중',
+'in-progress': '진행 중',
+'completed': '완료됨',
+'cancelled': '취소됨',
+'failed': '실패'
+};
+
+return statusMap[status] || status;
+}
+
+/**
+* 우선순위 텍스트 변환
+* @param {string} priority - 우선순위 코드
+* @returns {string} 우선순위 텍스트
+*/
+function getPriorityText(priority) {
+const priorityMap = {
+'high': '높음',
+'medium': '중간',
+'low': '낮음'
+};
+
+return priorityMap[priority] || priority;
+}
+
+// 문서 로드 완료 후 작업 스케줄러 인스턴스 생성
+document.addEventListener('DOMContentLoaded', function() {
+window.taskScheduler = new TaskScheduler();
+});/**
+* task-scheduling.js - 작업 할당/스케줄링 페이지 스크립트
+*/
+
+// 작업 스케줄링 클래스
+class TaskScheduler {
+constructor() {
+// 작업 및 AGV 데이터
+this.tasks = [];
+this.agvs = [];
+
+// 현재 선택된 작업 및 AGV
+this.selectedTask = null;
+this.selectedAgv = null;
+
+// 페이지네이션 설정
+this.currentPage = 1;
+this.itemsPerPage = 10;
+
+// 스케줄링 설정
+this.schedulingAlgorithm = 'fifo';
+this.autoAssignEnabled = false;
+this.urgencyWeight = 5;
+this.distanceWeight = 3;
+this.batteryWeight = 4;
+this.replanInterval = 30;
+
+// 이벤트 리스너 설정
+this.setupEventListeners();
+
+// 탭 초기화
+this.initTabs();
+
+// 초기 데이터 로드
+this.loadData();
+}
+
+/**
+* 이벤트 리스너 설정
+*/
+setupEventListeners() {
+// 탭 전환 이벤트
+const tabButtons = document.querySelectorAll('.tab-btn');
+tabButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    this.switchTab(button.getAttribute('data-tab'));
+  });
+});
+
+// 작업 생성 버튼 이벤트
+document.getElementById('createTaskButton').addEventListener('click', () => {
+  this.showCreateTaskModal();
+});
+
+// 작업 저장 버튼 이벤트
+document.getElementById('saveTaskButton').addEventListener('click', () => {
+  this.saveTask();
+});
+
+// AGV 추가 버튼 이벤트
+document.getElementById('addAgvButton').addEventListener('click', () => {
+  this.showAddAgvModal();
+});
+
+// AGV 저장 버튼 이벤트
+document.getElementById('saveAgvButton').addEventListener('click', () => {
+  this.saveAgv();
+});
+
+// 작업 할당 버튼 이벤트
+document.getElementById('assignTaskButton').addEventListener('click', () => {
+  this.assignTaskToAgv();
+});
+
+// 새로고침 버튼 이벤트
+document.getElementById('refreshButton').addEventListener('click', () => {
+  this.loadData();
+});
+
+// 작업 검색 이벤트
+document.getElementById('taskSearchInput').addEventListener('input', debounce(() => {
+  this.filterTasks();
+}, 300));
+
+// 작업 상태 필터 이벤트
+document.getElementById('taskStatusFilter').addEventListener('change', () => {
+  this.filterTasks();
+});
+
+// 스케줄링 알고리즘 변경 이벤트
+document.getElementById('schedulingAlgorithm').addEventListener('change', (e) => {
+  this.schedulingAlgorithm = e.target.value;
+  this.updateAlgorithmDescription(this.schedulingAlgorithm);
+});
+
+// 자동 할당 토글 이벤트
+document.getElementById('autoAssignEnabled').addEventListener('change', (e) => {
+  this.autoAssignEnabled = e.target.checked;
+  document.getElementById('autoAssignStatus').textContent = 
+    this.autoAssignEnabled ? '활성화' : '비활성화';
+});
+
+// 가중치 슬라이더 이벤트
+document.getElementById('urgencyWeight').addEventListener('input', (e) => {
+  this.urgencyWeight = parseInt(e.target.value);
+  document.getElementById('urgencyWeightValue').textContent = this.urgencyWeight;
+});
+
+document.getElementById('distanceWeight').addEventListener('input', (e) => {
+  this.distanceWeight = parseInt(e.target.value);
+  document.getElementById('distanceWeightValue').textContent = this.distanceWeight;
+});
+
+document.getElementById('batteryWeight').addEventListener('input', (e) => {
+  this.batteryWeight = parseInt(e.target.value);
+  document.getElementById('batteryWeightValue').textContent = this.batteryWeight;
+});
+
+// 재계획 간격 이벤트
+document.getElementById('replanInterval').addEventListener('change', (e) => {
+  this.replanInterval = parseInt(e.target.value);
+});
+
+// 스케줄링 설정 적용 버튼 이벤트
+document.getElementById('applySchedulingButton').addEventListener('click', () => {
+  this.applySchedulingSettings();
+});
+
+// 배치 작업 예약 버튼 이벤트
+document.getElementById('scheduleBatchButton').addEventListener('click', () => {
+  this.scheduleBatchJob();
+});
+
+// 배치 작업 지금 실행 버튼 이벤트
+document.getElementById('runBatchNowButton').addEventListener('click', () => {
+  this.runBatchJob();
+});
+
+// 통계 내보내기 버튼 이벤트
+document.getElementById('exportStatsButton').addEventListener('click', () => {
+  this.exportStatistics();
+});
+
+// 모달 닫기 버튼 이벤트
+const modalCloses = document.querySelectorAll('.modal-close');
+modalCloses.forEach(closeBtn => {
+  closeBtn.addEventListener('click', () => {
+    const modal = closeBtn.closest('.modal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  });
+});
+
+// 모달 외부 클릭 시 닫기
+const modals = document.querySelectorAll('.modal');
+modals.forEach(modal => {
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.style.display = 'none';
+    }
+  });
+});
+}
+
+/**
+* 탭 초기화
+*/
+initTabs() {
+// 기본 탭 설정
+this.switchTab('tasks');
+}
+
+/**
+* 탭 전환
+* @param {string} tabName - 활성화할 탭 이름
+*/
+switchTab(tabName) {
+// 모든 탭 버튼 비활성화
+const tabButtons = document.querySelectorAll('.tab-btn');
+tabButtons.forEach(button => {
+  button.classList.remove('active');
+});
+
+// 모든 탭 콘텐츠 숨기기
+const tabPanes = document.querySelectorAll('.tab-pane');
+tabPanes.forEach(pane => {
+  pane.classList.remove('active');
+});
+
+// 선택한 탭 활성화
+const selectedButton = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+if (selectedButton) {
+  selectedButton.classList.add('active');
+}
+
+const selectedPane = document.getElementById(`${tabName}-tab`);
+if (selectedPane) {
+  selectedPane.classList.add('active');
+}
+
+// 탭 전환 시 필요한 추가 동작
+if (tabName === 'scheduling') {
+  this.updateStatistics();
+}
+}
+
+/**
+* 데이터 로드
+*/
+loadData() {
+// 작업 데이터 로드
+this.loadTasks();
+
+// AGV 데이터 로드
+this.loadAgvs();
+
+// 자동 할당 상태에 따라 토글 스위치 업데이트
+document.getElementById('autoAssignEnabled').checked = this.autoAssignEnabled;
+document.getElementById('autoAssignStatus').textContent = 
+  this.autoAssignEnabled ? '활성화' : '비활성화';
+
+// 가중치 슬라이더 업데이트
+document.getElementById('urgencyWeight').value = this.urgencyWeight;
+document.getElementById('urgencyWeightValue').textContent = this.urgencyWeight;
+
+document.getElementById('distanceWeight').value = this.distanceWeight;
+document.getElementById('distanceWeightValue').textContent = this.distanceWeight;
+
+document.getElementById('batteryWeight').value = this.batteryWeight;
+document.getElementById('batteryWeightValue').textContent = this.batteryWeight;
+
+// 알고리즘 설명 업데이트
+this.updateAlgorithmDescription(this.schedulingAlgorithm);
+}
+
+/**
+* 작업 데이터 로드
+*/
+loadTasks() {
+// 로딩 표시
+document.getElementById('tasksTable').querySelector('tbody').innerHTML = `
+  <tr>
+    <td colspan="8" class="text-center">
+      <div class="spinner"></div>
+      <p class="mt-2">작업 데이터를 불러오는 중...</p>
+    </td>
+  </tr>
+`;
+
+// API 호출 (모의 데이터)
+apiRequest('/api/tasks')
+  .then(response => {
+    this.tasks = response.data || [];
+    this.renderTasksTable();
+  })
+  .catch(error => {
+    console.error('작업 데이터 로드 실패:', error);
+    showNotification('작업 데이터를 불러오는

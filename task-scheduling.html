@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGV 관리 시스템 - 작업 할당/스케줄링</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/common.css">
+  <link rel="stylesheet" href="assets/css/task-scheduling.css">
+</head>
+<body>
+  <!-- 사이드바 -->
+  <div class="sidebar">
+    <div class="logo">
+      <img src="assets/img/logo.svg" alt="로고">
+      <span>AGV 관리 시스템</span>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="sidebar-menu-item" data-page="index.html">
+        <i class="fas fa-tachometer-alt"></i>
+        <span>대시보드</span>
+      </li>
+      <li class="sidebar-menu-item" data-page="map-editor.html">
+        <i class="fas fa-map-marked-alt"></i>
+        <span>맵 에디터 및 라우팅</span>
+      </li>
+      <li class="sidebar-menu-item" data-page="task-scheduling.html">
+        <i class="fas fa-tasks"></i>
+        <span>작업 할당/스케줄링</span>
+      </li>
+      <li class="sidebar-menu-item" data-page="simulation-control.html">
+        <i class="fas fa-play-circle"></i>
+        <span>시뮬레이션 실행/제어</span>
+      </li>
+      <li class="sidebar-menu-item" data-page="visualization.html">
+        <i class="fas fa-chart-line"></i>
+        <span>3D 시뮬레이션 및 통계</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- 모바일 메뉴 토글 -->
+  <div class="mobile-toggle">
+    <i class="fas fa-bars"></i>
+  </div>
+
+  <!-- 메인 컨텐츠 -->
+  <div class="main-content">
+    <div class="header">
+      <h1>작업 할당/스케줄링</h1>
+      <div class="header-actions">
+        <button class="btn btn-primary" id="createTaskButton">
+          <i class="fas fa-plus"></i> 작업 생성
+        </button>
+        <button class="btn btn-secondary" id="refreshButton">
+          <i class="fas fa-sync-alt"></i> 새로고침
+        </button>
+      </div>
+    </div>
+
+    <!-- 탭 메뉴 -->
+    <div class="tab-menu">
+      <button class="tab-btn active" data-tab="tasks">작업 관리</button>
+      <button class="tab-btn" data-tab="agvs">AGV 관리</button>
+      <button class="tab-btn" data-tab="scheduling">스케줄링 설정</button>
+    </div>
+
+    <!-- 탭 콘텐츠 -->
+    <div class="tab-content">
+      <!-- 작업 관리 탭 -->
+      <div class="tab-pane active" id="tasks-tab">
+        <div class="row">
+          <!-- 작업 리스트 -->
+          <div class="col-8">
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">작업 목록</h2>
+                <div class="card-actions">
+                  <div class="search-box">
+                    <input type="text" placeholder="작업 검색..." id="taskSearchInput">
+                    <i class="fas fa-search"></i>
+                  </div>
+                  <div class="filter-box">
+                    <select id="taskStatusFilter">
+                      <option value="all">모든 상태</option>
+                      <option value="pending">대기 중</option>
+                      <option value="in-progress">진행 중</option>
+                      <option value="completed">완료됨</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table" id="tasksTable">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>상태</th>
+                        <th>우선순위</th>
+                        <th>출발지</th>
+                        <th>도착지</th>
+                        <th>할당된 AGV</th>
+                        <th>진행도</th>
+                        <th>액션</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- 작업 목록이 여기에 동적으로 추가됩니다 -->
+                    </tbody>
+                  </table>
+                </div>
+                <div class="pagination" id="tasksPagination">
+                  <!-- 페이지네이션이 여기에 동적으로 추가됩니다 -->
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 작업 세부 정보 -->
+          <div class="col-4">
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">작업 세부 정보</h2>
+              </div>
+              <div class="card-body" id="taskDetailsPanel">
+                <div class="text-center p-4">
+                  <i class="fas fa-info-circle text-light mb-3" style="font-size: 3rem;"></i>
+                  <p>작업을 선택하여 세부 정보를 확인하세요.</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 동적 할당 -->
+            <div class="card mt-4">
+              <div class="card-header">
+                <h2 class="card-title">작업 할당</h2>
+              </div>
+              <div class="card-body">
+                <div class="task-assignment-panel" id="taskAssignmentPanel">
+                  <div class="text-center p-3">
+                    <p>할당할 작업 및 AGV를 선택하세요.</p>
+                  </div>
+                </div>
+                <div class="mt-3">
+                  <button class="btn btn-primary w-100" id="assignTaskButton" disabled>
+                    <i class="fas fa-link"></i> 작업 할당
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AGV 관리 탭 -->
+      <div class="tab-pane" id="agvs-tab">
+        <div class="row">
+          <!-- AGV 리스트 -->
+          <div class="col-8">
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">AGV 목록</h2>
+                <div class="card-actions">
+                  <button class="btn btn-sm btn-primary" id="addAgvButton">
+                    <i class="fas fa-plus"></i> AGV 추가
+                  </button>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table" id="agvTable">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>상태</th>
+                        <th>배터리</th>
+                        <th>위치</th>
+                        <th>현재 작업</th>
+                        <th>액션</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- AGV 목록이 여기에 동적으로 추가됩니다 -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- AGV 세부 정보 -->
+          <div class="col-4">
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">AGV 세부 정보</h2>
+              </div>
+              <div class="card-body" id="agvDetailsPanel">
+                <div class="text-center p-4">
+                  <i class="fas fa-robot text-light mb-3" style="font-size: 3rem;"></i>
+                  <p>AGV를 선택하여 세부 정보를 확인하세요.</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- AGV 상태 변경 -->
+            <div class="card mt-4">
+              <div class="card-header">
+                <h2 class="card-title">AGV 상태 변경</h2>
+              </div>
+              <div class="card-body">
+                <div class="agv-control-panel" id="agvControlPanel">
+                  <div class="text-center p-3">
+                    <p>AGV를 선택하여 상태를 변경하세요.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 스케줄링 설정 탭 -->
+      <div class="tab-pane" id="scheduling-tab">
+        <div class="row">
+          <div class="col-8">
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">스케줄링 설정</h2>
+              </div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label for="schedulingAlgorithm" class="form-label">스케줄링 알고리즘</label>
+                  <select id="schedulingAlgorithm" class="form-control">
+                    <option value="fifo">FIFO (First In, First Out)</option>
+                    <option value="priority">우선순위 기반</option>
+                    <option value="deadline">납기일 기반</option>
+                    <option value="nearest">최근접 위치 기반</option>
+                    <option value="custom">사용자 정의</option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label for="autoAssignEnabled" class="form-label">자동 할당</label>
+                  <div class="toggle-switch">
+                    <input type="checkbox" id="autoAssignEnabled" class="toggle-input">
+                    <label for="autoAssignEnabled" class="toggle-label"></label>
+                    <span class="toggle-text" id="autoAssignStatus">비활성화</span>
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label">우선순위 가중치</label>
+                  <div class="slider-group">
+                    <div class="slider-label">
+                      <span>시급성</span>
+                      <span id="urgencyWeightValue">5</span>
+                    </div>
+                    <input type="range" id="urgencyWeight" min="1" max="10" value="5" class="form-control">
+                  </div>
+                  <div class="slider-group">
+                    <div class="slider-label">
+                      <span>거리</span>
+                      <span id="distanceWeightValue">3</span>
+                    </div>
+                    <input type="range" id="distanceWeight" min="1" max="10" value="3" class="form-control">
+                  </div>
+                  <div class="slider-group">
+                    <div class="slider-label">
+                      <span>배터리 효율</span>
+                      <span id="batteryWeightValue">4</span>
+                    </div>
+                    <input type="range" id="batteryWeight" min="1" max="10" value="4" class="form-control">
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label for="replanInterval" class="form-label">재계획 간격 (초)</label>
+                  <input type="number" id="replanInterval" class="form-control" min="1" value="30">
+                </div>
+                
+                <button class="btn btn-primary" id="applySchedulingButton">
+                  <i class="fas fa-check"></i> 설정 적용
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-4">
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">알고리즘 설명</h2>
+              </div>
+              <div class="card-body">
+                <div id="algorithmDescription">
+                  <h4>FIFO (First In, First Out)</h4>
+                  <p>작업이 생성된 순서대로 처리하는 가장 기본적인 알고리즘입니다.</p>
+                  <ul>
+                    <li>간단하고 공정한 방식</li>
+                    <li>모든 작업을 순차적으로 처리</li>
+                    <li>우선순위나 효율성을 고려하지 않음</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            
+            <div class="card mt-4">
+              <div class="card-header">
+                <h2 class="card-title">배치 작업</h2>
+              </div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label for="batchScheduleTime" class="form-label">예약 시간</label>
+                  <input type="datetime-local" id="batchScheduleTime" class="form-control">
+                </div>
+                <button class="btn btn-secondary w-100" id="scheduleBatchButton">
+                  <i class="fas fa-calendar-plus"></i> 배치 작업 예약
+                </button>
+                <div class="mt-3">
+                  <button class="btn btn-primary w-100" id="runBatchNowButton">
+                    <i class="fas fa-play"></i> 지금 배치 실행
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 스케줄링 통계 -->
+        <div class="row mt-4">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">스케줄링 통계</h2>
+                <div class="card-actions">
+                  <button class="btn btn-sm btn-secondary" id="exportStatsButton">
+                    <i class="fas fa-file-export"></i> 내보내기
+                  </button>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="stats-grid">
+                  <div class="stats-item">
+                    <div class="stats-label">총 처리 작업</div>
+                    <div class="stats-value" id="totalTasksProcessed">0</div>
+                  </div>
+                  <div class="stats-item">
+                    <div class="stats-label">평균 처리 시간</div>
+                    <div class="stats-value" id="avgProcessingTime">0분</div>
+                  </div>
+                  <div class="stats-item">
+                    <div class="stats-label">AGV 가동률</div>
+                    <div class="stats-value" id="agvUtilization">0%</div>
+                  </div>
+                  <div class="stats-item">
+                    <div class="stats-label">에너지 효율</div>
+                    <div class="stats-value" id="energyEfficiency">-</div>
+                  </div>
+                </div>
+                <div class="chart-container mt-4" id="statisticsChart">
+                  <!-- 차트가 여기에 동적으로 추가됩니다 -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 작업 생성 모달 -->
+  <div class="modal" id="createTaskModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">새 작업 생성</h3>
+        <span class="modal-close">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="taskName" class="form-label">작업 이름</label>
+          <input type="text" id="taskName" class="form-control" placeholder="작업 이름 입력">
+        </div>
+        <div class="form-group">
+          <label for="taskPriority" class="form-label">우선순위</label>
+          <select id="taskPriority" class="form-control">
+            <option value="high">높음</option>
+            <option value="medium" selected>중간</option>
+            <option value="low">낮음</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="taskStartPoint" class="form-label">출발 지점</label>
+          <input type="text" id="taskStartPoint" class="form-control" placeholder="예: A1, 창고-1">
+        </div>
+        <div class="form-group">
+          <label for="taskEndPoint" class="form-label">도착 지점</label>
+          <input type="text" id="taskEndPoint" class="form-control" placeholder="예: B7, 작업장-3">
+        </div>
+        <div class="form-group">
+          <label for="taskDeadline" class="form-label">마감 시간 (선택사항)</label>
+          <input type="datetime-local" id="taskDeadline" class="form-control">
+        </div>
+        <div class="form-group">
+          <label for="taskDescription" class="form-label">설명 (선택사항)</label>
+          <textarea id="taskDescription" class="form-control" rows="3" placeholder="작업 설명 입력"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary modal-close">취소</button>
+        <button class="btn btn-primary" id="saveTaskButton">
+          <i class="fas fa-save"></i> 저장
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AGV 추가 모달 -->
+  <div class="modal" id="addAgvModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">새 AGV 추가</h3>
+        <span class="modal-close">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="agvId" class="form-label">AGV ID</label>
+          <input type="text" id="agvId" class="form-control" placeholder="AGV ID 입력">
+        </div>
+        <div class="form-group">
+          <label for="agvType" class="form-label">AGV 유형</label>
+          <select id="agvType" class="form-control">
+            <option value="standard">표준형</option>
+            <option value="heavy">중량형</option>
+            <option value="compact">소형</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="agvInitialLocation" class="form-label">초기 위치</label>
+          <input type="text" id="agvInitialLocation" class="form-control" placeholder="예: A1, 충전소-1">
+        </div>
+        <div class="form-group">
+          <label for="agvBatteryLevel" class="form-label">배터리 수준 (%)</label>
+          <input type="number" id="agvBatteryLevel" class="form-control" min="0" max="100" value="100">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary modal-close">취소</button>
+        <button class="btn btn-primary" id="saveAgvButton">
+          <i class="fas fa-save"></i> 저장
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/common.js"></script>
+  <script src="assets/js/task-scheduling.js"></script>
+</body>
+</html>

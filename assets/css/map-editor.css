@@ -1,0 +1,416 @@
+/* map-editor.css - 맵 에디터 및 라우팅 페이지 스타일 */
+
+/* 맵 에디터 레이아웃 */
+.map-editor-container {
+    display: flex;
+    height: calc(100vh - 150px);
+    min-height: 600px;
+    gap: 1rem;
+  }
+  
+  /* 도구 패널 */
+  .tool-panel {
+    width: 250px;
+    background-color: var(--white);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    overflow-y: auto;
+  }
+  
+  .panel-section {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1.5rem;
+  }
+  
+  .panel-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  
+  .panel-title {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+  }
+  
+  /* 도구 버튼 */
+  .tool-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+  
+  .tool-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.8rem 0.5rem;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    background-color: var(--white);
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  .tool-btn i {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-light);
+  }
+  
+  .tool-btn span {
+    font-size: 0.75rem;
+    color: var(--text-light);
+  }
+  
+  .tool-btn:hover {
+    background-color: var(--secondary-color);
+  }
+  
+  .tool-btn.active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+  
+  .tool-btn.active i,
+  .tool-btn.active span {
+    color: var(--white);
+  }
+  
+  /* 좌표 입력 필드 */
+  .point-input {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .coord-input {
+    width: 40%;
+  }
+  
+  /* 버튼 그룹 */
+  .button-group {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+  
+  .button-group .btn:last-child {
+    grid-column: span 2;
+  }
+  
+  /* 범위 값 표시 */
+  .range-value {
+    text-align: center;
+    margin-top: 0.3rem;
+    font-size: 0.9rem;
+    color: var(--text-light);
+  }
+  
+  /* 알고리즘 정보 */
+  .algorithm-info {
+    font-size: 0.9rem;
+  }
+  
+  .algorithm-info h4 {
+    margin-bottom: 0.5rem;
+  }
+  
+  .algorithm-info p {
+    margin-bottom: 0.8rem;
+    color: var(--text-light);
+  }
+  
+  .algorithm-info ul {
+    padding-left: 1.2rem;
+    color: var(--text-light);
+  }
+  
+  /* 맵 컨테이너 */
+  .map-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--white);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .map-controls {
+    padding: 0.8rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .zoom-controls {
+    display: flex;
+    gap: 0.3rem;
+  }
+  
+  .map-info {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .map-wrapper {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+  }
+  
+  .map-grid {
+    display: grid;
+    gap: 1px;
+    background-color: var(--border-color);
+    transform-origin: top left;
+    transition: transform 0.3s;
+  }
+  
+  /* 맵 셀 스타일 */
+  .grid-cell {
+    width: 30px;
+    height: 30px;
+    background-color: var(--white);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .grid-cell:hover {
+    transform: scale(1.05);
+    z-index: 2;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .grid-cell.empty {
+    background-color: var(--white);
+  }
+  
+  .grid-cell.obstacle {
+    background-color: #424242;
+  }
+  
+  .grid-cell.charging {
+    background-color: #ffca28;
+  }
+  
+  .grid-cell.workstation {
+    background-color: #66bb6a;
+  }
+  
+  .grid-cell.start {
+    background-color: #42a5f5;
+  }
+  
+  .grid-cell.end {
+    background-color: #ef5350;
+  }
+  
+  .grid-cell.path {
+    background-color: #ba68c8;
+  }
+  
+  .grid-cell i {
+    font-size: 0.9rem;
+    color: var(--white);
+  }
+  
+  .grid-cell.charging i,
+  .grid-cell.workstation i {
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .grid-cell .cell-cost {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    font-size: 0.65rem;
+    color: rgba(0, 0, 0, 0.6);
+  }
+  
+  .grid-coordinates {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    font-size: 0.65rem;
+    color: rgba(0, 0, 0, 0.4);
+  }
+  
+  /* 맵 범례 */
+  .map-legend {
+    padding: 0.8rem;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    border-top: 1px solid var(--border-color);
+    flex-wrap: wrap;
+  }
+  
+  .legend-item {
+    display: flex;
+    align-items: center;
+    font-size: 0.8rem;
+  }
+  
+  .legend-color {
+    width: 16px;
+    height: 16px;
+    margin-right: 0.3rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .legend-color.empty {
+    background-color: var(--white);
+  }
+  
+  .legend-color.obstacle {
+    background-color: #424242;
+  }
+  
+  .legend-color.charging {
+    background-color: #ffca28;
+  }
+  
+  .legend-color.workstation {
+    background-color: #66bb6a;
+  }
+  
+  .legend-color.start {
+    background-color: #42a5f5;
+  }
+  
+  .legend-color.end {
+    background-color: #ef5350;
+  }
+  
+  .legend-color.path {
+    background-color: #ba68c8;
+  }
+  
+  /* 정보 패널 */
+  .info-panel {
+    width: 300px;
+    background-color: var(--white);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    overflow-y: auto;
+  }
+  
+  /* 경로 정보 */
+  .route-info {
+    font-size: 0.9rem;
+  }
+  
+  .route-stats {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 5px;
+    background-color: var(--secondary-color);
+  }
+  
+  .route-stat {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+  
+  .route-stat-label {
+    color: var(--text-light);
+  }
+  
+  .route-stat-value {
+    font-weight: 500;
+  }
+  
+  .route-path {
+    margin-top: 1rem;
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 0.8rem;
+    color: var(--text-light);
+    line-height: 1.8;
+  }
+  
+  .path-step {
+    display: inline-block;
+    padding: 0.2rem 0.4rem;
+    background-color: rgba(186, 104, 200, 0.1);
+    border: 1px solid rgba(186, 104, 200, 0.2);
+    border-radius: 3px;
+    margin: 0.2rem;
+  }
+  
+  /* 반응형 레이아웃 */
+  @media (max-width: 1200px) {
+    .map-editor-container {
+      flex-direction: column;
+      height: auto;
+    }
+    
+    .tool-panel, .info-panel {
+      width: 100%;
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+    
+    .panel-section {
+      flex: 1;
+      min-width: 300px;
+      border-bottom: none;
+      border-right: 1px solid var(--border-color);
+      padding-right: 1rem;
+      padding-bottom: 0;
+    }
+    
+    .panel-section:last-child {
+      border-right: none;
+    }
+    
+    .map-container {
+      min-height: 500px;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .tool-panel, .info-panel {
+      flex-direction: column;
+    }
+    
+    .panel-section {
+      width: 100%;
+      border-right: none;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1.5rem;
+      padding-right: 0;
+    }
+    
+    .map-info {
+      display: none;
+    }
+  }
+  
+  /* 애니메이션 */
+  @keyframes pathAnimation {
+    0% { background-color: var(--white); }
+    50% { background-color: #ba68c8; }
+    100% { background-color: #ba68c8; }
+  }

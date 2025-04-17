@@ -1,0 +1,416 @@
+/* visualization.css - 3D 시뮬레이션 및 통계 시각화 페이지 스타일 */
+
+/* 탭 메뉴 */
+.tab-menu {
+    display: flex;
+    background-color: var(--white);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+  
+  .tab-btn {
+    flex: 1;
+    padding: 1rem;
+    border: none;
+    background-color: transparent;
+    color: var(--text-light);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+  }
+  
+  .tab-btn:hover {
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+  }
+  
+  .tab-btn.active {
+    background-color: var(--primary-color);
+    color: var(--white);
+  }
+  
+  /* 탭 콘텐츠 */
+  .tab-pane {
+    display: none;
+  }
+  
+  .tab-pane.active {
+    display: block;
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  /* 시각화 컨테이너 */
+  .visualization-container {
+    display: flex;
+    height: calc(100vh - 200px);
+    min-height: 600px;
+    gap: 1rem;
+  }
+  
+  /* 제어 패널 */
+  .control-panel {
+    width: 240px;
+    background-color: var(--white);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    overflow-y: auto;
+  }
+  
+  /* 패널 섹션 */
+  .panel-section {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1.5rem;
+  }
+  
+  .panel-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  
+  .panel-title {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+  }
+  
+  /* 제어 버튼 */
+  .control-buttons {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .control-buttons .btn {
+    flex: 1;
+  }
+  
+  /* 속도 선택기 */
+  .speed-selector {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+  }
+  
+  .speed-btn {
+    flex: 1;
+    padding: 0.5rem 0;
+    background-color: var(--white);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  .speed-btn:first-child {
+    border-radius: 5px 0 0 5px;
+  }
+  
+  .speed-btn:last-child {
+    border-radius: 0 5px 5px 0;
+  }
+  
+  .speed-btn:hover {
+    background-color: var(--secondary-color);
+  }
+  
+  .speed-btn.active {
+    background-color: var(--primary-color);
+    color: var(--white);
+    border-color: var(--primary-color);
+  }
+  
+  /* 애니메이션 시간 */
+  .animation-time {
+    margin-top: 1.5rem;
+    text-align: center;
+  }
+  
+  .time-label {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-bottom: 0.5rem;
+  }
+  
+  .time-display {
+    font-size: 1.5rem;
+    font-weight: 600;
+    font-family: 'Roboto Mono', monospace;
+    color: var(--text-color);
+  }
+  
+  /* 표시 설정 */
+  .display-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  
+  .form-check {
+    display: flex;
+    align-items: center;
+  }
+  
+  .form-check-input {
+    margin-right: 0.5rem;
+  }
+  
+  .form-check-label {
+    font-size: 0.9rem;
+  }
+  
+  /* 시각화 영역 */
+  .visualization-area {
+    flex: 1;
+    background-color: var(--white);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .plot-container {
+    width: 100%;
+    height: 100%;
+  }
+  
+  /* 정보 패널 */
+  .info-panel {
+    width: 280px;
+    background-color: var(--white);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    overflow-y: auto;
+  }
+  
+  /* 현재 상태 컨테이너 */
+  .status-container {
+    padding: 1rem;
+    background-color: var(--secondary-color);
+    border-radius: 5px;
+  }
+  
+  .status-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+  
+  .status-row:last-child {
+    margin-bottom: 0;
+  }
+  
+  .status-label {
+    font-size: 0.9rem;
+    color: var(--text-light);
+  }
+  
+  .status-value {
+    font-weight: 500;
+  }
+  
+  /* AGV 정보 컨테이너 */
+  .agv-info-container, .task-info-container {
+    padding: 1rem;
+    background-color: var(--secondary-color);
+    border-radius: 5px;
+  }
+  
+  .info-message {
+    text-align: center;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    padding: 1rem 0;
+  }
+  
+  .agv-header, .task-header {
+    font-weight: 600;
+    margin-bottom: 0.8rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .agv-badge, .task-badge {
+    font-size: 0.8rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 20px;
+  }
+  
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+  }
+  
+  .info-label {
+    color: var(--text-light);
+  }
+  
+  .info-value {
+    font-weight: 500;
+  }
+  
+  .battery-bar {
+    height: 10px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+  }
+  
+  .battery-level {
+    height: 100%;
+    border-radius: 5px;
+  }
+  
+  .loading {
+    text-align: center;
+    padding: 1rem 0;
+    color: var(--text-light);
+  }
+  
+  /* 통계 요약 */
+  .stats-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .stats-item {
+    flex: 1;
+    min-width: 200px;
+    background-color: var(--secondary-color);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+  }
+  
+  .stats-icon {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-right: 1rem;
+    width: 50px;
+    text-align: center;
+  }
+  
+  .stats-content {
+    flex: 1;
+  }
+  
+  .stats-label {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-bottom: 0.3rem;
+  }
+  
+  .stats-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+  
+  /* 차트 컨테이너 */
+  .chart-container {
+    width: 100%;
+    height: 300px;
+  }
+  
+  /* 데이터 요약 */
+  .data-summary {
+    padding: 1rem;
+    background-color: var(--secondary-color);
+    border-radius: 5px;
+  }
+  
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+  
+  .summary-row:last-child {
+    margin-bottom: 0;
+  }
+  
+  .summary-label {
+    font-size: 0.9rem;
+    color: var(--text-light);
+  }
+  
+  .summary-value {
+    font-weight: 500;
+  }
+  
+  /* 효율성 노트 */
+  .efficiency-note {
+    text-align: center;
+  }
+  
+  .note-text {
+    font-size: 0.9rem;
+    color: var(--text-light);
+  }
+  
+  .note-text i {
+    color: var(--primary-color);
+    margin-right: 0.3rem;
+  }
+  
+  /* 모달 파일 입력 */
+  .data-file-input {
+    margin-bottom: 1rem;
+  }
+  
+  /* 반응형 레이아웃 */
+  @media (max-width: 1200px) {
+    .visualization-container {
+      flex-direction: column;
+      height: auto;
+    }
+    
+    .control-panel, .info-panel {
+      width: 100%;
+      max-width: 100%;
+    }
+    
+    .visualization-area {
+      height: 500px;
+    }
+    
+    .stats-item {
+      flex: 0 0 calc(50% - 1rem);
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .stats-item {
+      flex: 0 0 100%;
+    }
+    
+    .col-4, .col-6, .col-8, .col-12 {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
+    
+    .row .card {
+      margin-bottom: 1rem;
+    }
+  }
